@@ -10,8 +10,8 @@ Two apps and one dataset are required to operate arcAstroVR.
   
   
 Download and Setup  
- 1. Download the latest version of [arcAstroVR](https://arcastrovr.org/download.html?id=app) from arcAstroVR.org. 
- 2. Download the [dataset](https://arcastrovr.org/download.html?id=dataset) you wish to play from arcAstroVR.org.
+ 1. Download the latest version of [arcAstroVR](https://arcastrovr.org/download.html?id=app) from [arcAstroVR.org](https://arcastrovr.org). 
+ 2. Download the [dataset](https://arcastrovr.org/download.html?id=dataset) you wish to play from [arcAstroVR.org](https://arcastrovr.org).
  3. Download the planetarium software [Stellarium](https://www.stellarium.org/) from www.stellarium.org.
  4. Launch Stellarium and configure linkage settings.  
  4-1. Click `Configuration`[F2 Key].  
@@ -49,7 +49,7 @@ arcAstroVR is programmed in Unity.
 This section describes the setup from a new Unity project (any template is acceptable, but 3D Core is recommended).  
 
 ### Asset Installation  
-arcAstroVR is programmed in Unity and requires the following Unity Assets in addition to the arcAstroVR Unity Asset uploaded on GitHub.  
+arcAstroVR requires the following Unity Assets in addition to the arcAstroVR Unity Asset uploaded on GitHub.  
 
  * Input System (Unity Registry：Free)<br>The new INPUT SYSTEM of Unity is used to support various input devices. It is not installed by default and requires additional installation.
  * Localization (Unity Registry：Free)<br>The LOCALIZATION of Unity is used for multilingual support. It is not installed by default and requires additional installation.
