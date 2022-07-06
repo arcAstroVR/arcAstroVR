@@ -23,6 +23,8 @@ public class aAV_FileSet : MonoBehaviour {
 	[SerializeField]
 	private HumanoidAvatarMapper _humanoidAvatarMapper;
 
+	public Material terrainMaterial;
+
 	private aAV_Public aav_public;
 	private aAV_GIS gis;
 	private GameObject errorstatus;
@@ -616,9 +618,12 @@ public class aAV_FileSet : MonoBehaviour {
 
 				//rawファイルの読み込み
 				TerrainData terrainData = new TerrainData();
-				terrainData.heightmapResolution = terrainResolution + 1;
+				terrainData.heightmapResolution = heightmapRes;
+				terrainData.alphamapResolution = terrainResolution;
+				terrainData.baseMapResolution = terrainResolution;
 				GameObject terrainObj = Terrain.CreateTerrainGameObject(terrainData);
 				terrain =terrainObj.GetComponent<Terrain>();
+				terrain.materialTemplate = terrainMaterial;
 				terrainObj.name = terrainName;
 				using (BinaryReader br = new BinaryReader(File.Open(rawName, FileMode.Open, FileAccess.Read)))
 				{
@@ -656,10 +661,6 @@ public class aAV_FileSet : MonoBehaviour {
 					terrain.drawInstanced = true;
 					terrain.basemapDistance = 20000;
 					terrain.shadowCastingMode = ShadowCastingMode.On;
-					terrain.terrainData.heightmapResolution = heightmapRes;
-					terrain.terrainData.alphamapResolution = terrainResolution;
-					terrain.terrainData.baseMapResolution = terrainResolution;
-					Debug.Log(terrainName+", HeightMapRes="+terrain.terrainData.heightmapResolution);
 
 					//TerrainにHeightMap、Colliderをセット
 					terrain.terrainData.SetHeights(0, 0, heights);
