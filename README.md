@@ -1,5 +1,5 @@
 # arcAstroVR
-arcAstroVR is a free open source VR simulator for visualization of archaeological structures and the background celestial body.
+arcAstroVR is a free open source VR simulator for visualization of archaeological structures and the background celestial body.  
 It is available for Windows and macOS. 
 
 ## Installation Instructions & Quick Start
@@ -82,7 +82,7 @@ Asset Settings
 2.	Click the `Localization` in the left-hand list and select `Localization Settings` from ActiveSettings.
 3.	Click the `Player` in the left-hand list and select `Localization Settings` from ActiveSettings.<br>Select `Input System Package (New)` for `Other Settings : Configuration : Active Input Gandling`.
 4. Click the `XR Plugin Management` in the left-hand list and click `Install XR Plugin management`.<br>Check the InitializeXR on Startup checkbox. *Windows only<br>Check the OpenXR checkbox. *Windows only<br>*For Mac, all the above checks should be unchecked since it does not yet support the OpenXR.
-5.	Click the `Preset Manager` in the left-hand list and click `Add Default Preset`. *Windows only<br>Select `Component>XR>XR Controller(Action based)`.<br>Make the following settings in the Filter and Preset fields displayed. <br>・Filter : `(none)`, Preset : `XRI Default Continuous Move`<br>・Filter : `(none)`, Preset :` XRI Default Continuous Turn`<br>・Filter : `(none)`, Preset : `XRI Default Snap Turn`<br>・Filter : `Left`, Preset : `XRI Default Left Controller`<br>・Filter : `Right`, Preset : `XRI Default Right Controller`<br>*For Mac, all the above XR controller settings are not necessary since the XR function is not yet supported.  
+5.	Click the `Preset Manager` in the left-hand list and click `Add Default Preset`. *Windows only<br>Select `Component>XR>XR Controller(Action based)`.<br>Make the following settings in the Filter and Preset fields displayed. <br>・Filter : `(none)`, Preset : `XRI Default Continuous Move`<br>・Filter : `(none)`, Preset : `XRI Default Continuous Turn`<br>・Filter : `(none)`, Preset : `XRI Default Snap Turn`<br>・Filter : `Left`, Preset : `XRI Default Left Controller`<br>・Filter : `Right`, Preset : `XRI Default Right Controller`<br>*For Mac, all the above XR controller settings are not necessary since the XR function is not yet supported.  
 
 ### Program execution
 1. Open the scene file `Assets/arcAstroVR/Scences/arcAstroVR` from the Project folder.  
