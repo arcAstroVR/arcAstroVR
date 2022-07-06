@@ -27,7 +27,7 @@ Download and Setup
  4-11. Set 8090 for `port number`.  
  4-12. Click the `Save settings`.  
  4-13. Click the `Scripts` tab.  
- 4-14. Select skybox.ssc script in the left-hand list.  
+ 4-14. Select `skybox.ssc` script in the left-hand list.  
  4-15. Check `Close window when script runs`, and click the `▶` button.<br>` (You should see the window close and the camera point to the cardinal directions, up, and down sequentially)`  
  4-16. Click the Tool tab.  
  4-17. Set Path for `Screenshot Directory`.<br> ` For Win, specify "C:\Users\\<USERNAME\>\AppData\Roaming\Stellarium".`<br> ` For Mac, specify "/Users/\<USERNAME\>/Library/Application Support/Stellarium".`  
