@@ -30,7 +30,7 @@ Download and Setup
  4-14. Select `skybox.ssc` script in the left-hand list.  
  4-15. Check `Close window when script runs`, and click the `▶` button.<br>` (You should see the window close and the camera point to the cardinal directions, up, and down sequentially)`  
  4-16. Click the Tool tab.  
- 4-17. Set Path for `Screenshot Directory`.<br> ` For Win, specify "C:\Users\\<USERNAME\>\AppData\Roaming\Stellarium".`<br> ` For Mac, specify "/Users/\<USERNAME\>/Library/Application Support/Stellarium".`  
+ 4-17. Set Path for `Screenshot Directory`.<br> ` For Win, specify "C:\Users\<USERNAME>\AppData\Roaming\Stellarium".`<br> ` For Mac, specify "/Users/<USERNAME>/Library/Application Support/Stellarium".`  
  5. Launch arcAstroVR and click `select dataset.txt`.  
  6. Select the file dataset.txt in the dataset.  
  
