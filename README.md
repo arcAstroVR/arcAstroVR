@@ -36,7 +36,7 @@ Download and Setup
  
  The observer(Camera) can be moved using the keyboard and mouse.  
  Basically, drag the left mouse button to set the direction of travel, and press the `W` and `S` keys to move forward and backward.  
- * Line of sight/direction of travel: The viewpoint moves with the `left mouse button`.
+ * Line of sight/direction of travel: The viewpoint moves with the `right mouse button`.
  * Change viewpoint: `tab` key can be used to switch between the own viewpoint and the third-person viewpoint.
  * Move: `W` key move forward in the direction of viewpoint, `S` key move backward from the direction of viewpoint, `A` key move left, `D` key move right.
  * High speed: You can move at high speed by holding down `Shift` key while moving.
@@ -95,7 +95,7 @@ The arcAstroVR asset is programmed based on the Unity Asset "stellarium-unity" d
  * 3rd Person Controller + Fly Mode<br>Authors: Vinicius Marques<br>Contact: http://www.dcc.ufmg.br/~allonman/support<br>Version: 2.1.5<br>Licence: Unity Asset Store standard EULA  
  * JSON Object<br>Authors: Defective Studios<br>Contact: http://defectivestudios.com/company<br>Version: 2.1.2<br>Licence: Unity Asset Store standard EULA  
  * Dome Tools<br>Authors: At-Bristol<br>Contact: http://at-bristol.org.uk<br>Version: 1.1<br>Licence: Unity Asset Store standard EULA  
- * TriLib2<br>Authors: Ricardo Reis<br>Contact: https://ricardoreis.net<br>Version: 2.1.0<br>Licence: Unity Asset Store standard EULA  
+ * TriLib2<br>Authors: Ricardo Reis<br>Contact: https://ricardoreis.net<br>Version: 2.17a<br>Licence: Unity Asset Store standard EULA  
 
 ## License
 Released April 1, 2022 under GPLv3.
