@@ -54,7 +54,7 @@ public class aAV_MoveBehaviour : aAV_GenericBehaviour
 			if(!behaviourManager.IsMoving()){		//岩城追加
 				jumpIntertialForce = 0f;
 			}else{
-				jumpIntertialForce = 2+speed;
+				jumpIntertialForce = speed*(aAV_Event.sprint ? sprintFactor : 1f)*1.5f;
 			}
 			jump = true;
 		}

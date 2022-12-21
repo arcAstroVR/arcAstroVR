@@ -85,6 +85,51 @@
                     "processors": "",
                     "interactions": "",
                     "initialStateCheck": true
+                },
+                {
+                    "name": "Infoview",
+                    "type": "Button",
+                    "id": "af1bb6a9-4e99-4006-b18d-55cea2bcb592",
+                    "expectedControlType": "Button",
+                    "processors": "",
+                    "interactions": "",
+                    "initialStateCheck": false
+                },
+                {
+                    "name": "Datetime",
+                    "type": "Button",
+                    "id": "7605506f-51b5-45e4-87b5-1f73444ac99c",
+                    "expectedControlType": "Button",
+                    "processors": "",
+                    "interactions": "",
+                    "initialStateCheck": false
+                },
+                {
+                    "name": "Stellaicon",
+                    "type": "Button",
+                    "id": "e9d2ff9d-3a5c-4e3d-a2c4-17b818fef654",
+                    "expectedControlType": "Button",
+                    "processors": "",
+                    "interactions": "",
+                    "initialStateCheck": false
+                },
+                {
+                    "name": "Setting",
+                    "type": "Button",
+                    "id": "d000d4c7-412c-4028-b4d4-c2872bd3ea42",
+                    "expectedControlType": "Button",
+                    "processors": "",
+                    "interactions": "",
+                    "initialStateCheck": false
+                },
+                {
+                    "name": "ToggleUI",
+                    "type": "Button",
+                    "id": "69768e9e-316b-407d-91c0-97258d0dbea5",
+                    "expectedControlType": "Button",
+                    "processors": "",
+                    "interactions": "",
+                    "initialStateCheck": false
                 }
             ],
             "bindings": [
@@ -212,7 +257,7 @@
                 {
                     "name": "",
                     "id": "143bb1cd-cc10-4eca-a2f0-a3664166fe91",
-                    "path": "<Gamepad>/leftShoulder",
+                    "path": "<Gamepad>/rightShoulder",
                     "interactions": "",
                     "processors": "",
                     "groups": ";Gamepad",
@@ -245,7 +290,7 @@
                 {
                     "name": "",
                     "id": "ac76f940-7b1b-4559-9459-3b39354a2b45",
-                    "path": "<Gamepad>/leftTrigger",
+                    "path": "<Gamepad>/leftShoulder",
                     "interactions": "",
                     "processors": "",
                     "groups": "Gamepad",
@@ -311,7 +356,7 @@
                 {
                     "name": "Negative",
                     "id": "b3d35ba9-30a6-43a5-acd5-fd4b5bdc9c5b",
-                    "path": "<Gamepad>/rightTriggerButton",
+                    "path": "<Gamepad>/rightTrigger",
                     "interactions": "",
                     "processors": "",
                     "groups": "Gamepad",
@@ -322,7 +367,7 @@
                 {
                     "name": "Positive",
                     "id": "85dace21-7096-471f-803c-6858e13ce08d",
-                    "path": "<Gamepad>/rightShoulder",
+                    "path": "<Gamepad>/leftTrigger",
                     "interactions": "",
                     "processors": "",
                     "groups": "Gamepad",
@@ -333,9 +378,9 @@
                 {
                     "name": "Ctrl+Wheel",
                     "id": "e1f0aa6e-fd30-4493-a4e7-6739df44d76e",
-                    "path": "ButtonWithOneModifier",
+                    "path": "OneModifier",
                     "interactions": "",
-                    "processors": "",
+                    "processors": "Scale(factor=0.1)",
                     "groups": "",
                     "action": "Zoom",
                     "isComposite": true,
@@ -353,7 +398,7 @@
                     "isPartOfComposite": true
                 },
                 {
-                    "name": "Button",
+                    "name": "Binding",
                     "id": "7f247bfe-b1f5-456b-ade9-8de09d221e65",
                     "path": "<Mouse>/scroll/y",
                     "interactions": "",
@@ -366,16 +411,16 @@
                 {
                     "name": "Cmd+Wheel",
                     "id": "f7d91890-0875-4522-b688-dc69c2e25e07",
-                    "path": "ButtonWithOneModifier",
+                    "path": "OneModifier",
                     "interactions": "",
-                    "processors": "",
+                    "processors": "Scale(factor=0.1)",
                     "groups": "",
                     "action": "Zoom",
                     "isComposite": true,
                     "isPartOfComposite": false
                 },
                 {
-                    "name": "modifier",
+                    "name": "Modifier",
                     "id": "0afec97d-97b1-4c9b-b9e0-d9402343ed69",
                     "path": "<Keyboard>/leftMeta",
                     "interactions": "",
@@ -386,7 +431,7 @@
                     "isPartOfComposite": true
                 },
                 {
-                    "name": "button",
+                    "name": "Binding",
                     "id": "100d4aba-340d-413c-8355-c00cd9a53d47",
                     "path": "<Mouse>/scroll/y",
                     "interactions": "",
@@ -399,7 +444,7 @@
                 {
                     "name": "",
                     "id": "827934b4-d69b-4681-9dba-c5311b9d19cd",
-                    "path": "<Gamepad>/buttonNorth",
+                    "path": "<Gamepad>/start",
                     "interactions": "",
                     "processors": "",
                     "groups": "Gamepad",
@@ -445,9 +490,119 @@
                     "id": "c1f7a91b-d0fd-4a62-997e-7fb9b69bf235",
                     "path": "<Gamepad>/rightStick",
                     "interactions": "",
-                    "processors": "",
+                    "processors": "ScaleVector2(x=0.3,y=0.3)",
                     "groups": "Gamepad",
                     "action": "Look",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "Right Drag",
+                    "id": "4b7cf832-a695-44cc-a9c2-07972aeec6d3",
+                    "path": "OneModifier",
+                    "interactions": "",
+                    "processors": "ScaleVector2(x=0.1,y=0.1)",
+                    "groups": "",
+                    "action": "Look",
+                    "isComposite": true,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "modifier",
+                    "id": "6f5c4366-a779-44bf-bc83-5a47f60a73db",
+                    "path": "<Mouse>/rightButton",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "Keyboard&Mouse",
+                    "action": "Look",
+                    "isComposite": false,
+                    "isPartOfComposite": true
+                },
+                {
+                    "name": "binding",
+                    "id": "8dfc3492-69a4-4899-9217-b5b93dfaf69e",
+                    "path": "<Mouse>/delta",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "Keyboard&Mouse",
+                    "action": "Look",
+                    "isComposite": false,
+                    "isPartOfComposite": true
+                },
+                {
+                    "name": "",
+                    "id": "73c25a80-b5df-439d-8860-693a8a4313e6",
+                    "path": "<XRController>{LeftHand}/secondaryButton",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "XR",
+                    "action": "Infoview",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "28bff1e7-9bba-4c85-984a-1283a2910e07",
+                    "path": "<Gamepad>/buttonNorth",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "Gamepad",
+                    "action": "Infoview",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "331bc553-e84d-4199-949a-8daccb081d02",
+                    "path": "<XRController>{RightHand}/primaryButton",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "XR",
+                    "action": "Datetime",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "1f9b9e32-9ebc-4424-b72b-0dcbce520ab3",
+                    "path": "<XRController>{RightHand}/secondaryButton",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "XR",
+                    "action": "Stellaicon",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "da142e4c-4e5e-497b-a3f4-58b500ba4a47",
+                    "path": "<XRController>{LeftHand}/menu",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "XR",
+                    "action": "Setting",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "0dd2b765-f73a-4284-a64c-b65f238bd8f7",
+                    "path": "<Keyboard>/escape",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "Keyboard&Mouse",
+                    "action": "ToggleUI",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "af574fc6-4855-4256-a40d-8e4aa0fa1fee",
+                    "path": "<Gamepad>/select",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "Gamepad",
+                    "action": "ToggleUI",
                     "isComposite": false,
                     "isPartOfComposite": false
                 }

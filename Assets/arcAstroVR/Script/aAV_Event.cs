@@ -1,9 +1,11 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.InputSystem;
 using UnityEngine.XR.Management;
+using UnityEngine.XR.Interaction.Toolkit;
 
 public class aAV_Event : MonoBehaviour
 {
@@ -19,14 +21,15 @@ public class aAV_Event : MonoBehaviour
 	[SerializeField]
 	private InputActionReference flyupXR;
 
-	public static float moveH = 0;
+	public static float moveH = 0;				//Avatar移動設定：aAV_BasicBehaviour.csでこの値を参照して実行
 	public static float moveV = 0;
-	public static float rotateH = 0;
+	public static float rotateH = 0;				//Avatar回転設定：aAV_ThirdPersonOrbitCamBasic.csでこの値を参照して実行
 	public static float rotateV = 0;
 	public static bool sprint = false;
 	public static bool rise = false;
+	public static bool zoom = false;
 	public static bool selectStella = false;
-	public static bool selectMenu = false;
+	public static bool selectInfo = false;
 	public static bool selectDate = false;
 	public static bool textInput = false;			//EditWindow操作
 
@@ -35,6 +38,11 @@ public class aAV_Event : MonoBehaviour
 	public AudioClip audioOpen;
 	public AudioClip audioClose;
 
+	private GameObject menuObj;	
+	private GameObject topbarGameobject;
+	private GameObject infoGameobject;
+	private GameObject targetGameobject;
+	private GameObject stellaGameobject;
 	private GameObject selectGameobject;
 	private GameObject dateTimeSetting;
 	private GameObject tzInputField;
@@ -45,6 +53,11 @@ public class aAV_Event : MonoBehaviour
 	private GameObject minuteInputField;
 	private GameObject secondInputField;
 	private GameObject updateButton;
+	private GameObject settingGameobject;
+	private GameObject markerCam;
+	private GameObject mapCam;
+	private XRRayInteractor rightHand;
+	private Text copyright;
 
 	private aAV_icon aAV_icon_script;
 	private aAV_UI aAV_UI_script;
@@ -52,23 +65,32 @@ public class aAV_Event : MonoBehaviour
 	private aAV_FlyBehaviour aAV_Fly_script;
 	private aAV_StelMouseZoom aAV_Zoom_script;
 	private aAV_ThirdPersonOrbitCamBasic aAV_Cam_script;
+	private aAV_CamEdit aAV_MarkerCam_script;
+	private aAV_CompassMap aAV_Compass_script;
 	private int stellaNo = 0;
 	private int dateNo = 1;
-	private int menuNo = 0;
-	
+	private int infoNo = 1;
+	private int infoAction = 1;
+
 	private float checkTime = 0f;
 	private float pressTime = 0f;
 	private float angleH = 0;                                          // Float to store camera horizontal angle related to mouse movement.
 	private float angleV = 0;                                          // Float to store camera vertical angle related to mouse movement.
 
-	private Color inputColor = new Color(1.0f, 1.0f, 0.7f);
+	private Color inputColor = new Color(1.0f, 0.8f, 0.2f);
+	private Color OnColor = new Color(0.25f, 0.6f, 0.25f, 1.0f);
+	private Color OffColor = new Color(0f, 0f, 0f, 0f);
 	private Color dateOffColor = new Color(0.25f, 0.25f, 0.4f, 0.8f);
-	private Color dateOnColor = new Color(0.25f, 0.6f, 0.25f, 1.0f);
+	private Color infoOffColor = new Color(0f, 0f, 0f, 0.4f);
 	private Color buttonOffColor = new Color(0.4f, 0.4f, 0.4f, 1.0f);
 	private Color buttonOnColor = new Color(0.3f, 0.3f, 0.3f, 1.0f);
 
 	void Awake(){
 		Transform mainTrans = GameObject.Find("Main").transform;
+		menuObj 			= mainTrans.Find("Menu").gameObject;
+		topbarGameobject = mainTrans.Find("Menu/TopBar").gameObject;
+		infoGameobject = mainTrans.Find("Menu/InfoView").gameObject;
+		stellaGameobject = mainTrans.Find("Menu/ToggleSwitch").gameObject;
 		selectGameobject = mainTrans.Find("Menu/ToggleSwitch/Select").gameObject;
 		dateTimeSetting= mainTrans.Find("Menu/DateTimeSetting").gameObject;
 		tzInputField= mainTrans.Find("Menu/DateTimeSetting/TimeZone/TZInputField").gameObject;
@@ -79,14 +101,20 @@ public class aAV_Event : MonoBehaviour
 		minuteInputField= mainTrans.Find("Menu/DateTimeSetting/Time/MinuteInputField").gameObject;
 		secondInputField= mainTrans.Find("Menu/DateTimeSetting/Time/SecondInputField").gameObject;
 		updateButton = mainTrans.Find("Menu/DateTimeSetting/TimeZone/UpdateButton").gameObject;
+		settingGameobject = mainTrans.Find("Menu/Setting").gameObject;
+		rightHand =GameObject.Find("XR Origin").transform.Find("Camera Offset/RightHand Controller").gameObject.GetComponent<XRRayInteractor>();
+		copyright = mainTrans.Find("Menu/Copyright").gameObject.GetComponent<Text>();
+		markerCam = mainTrans.Find("MarkerCamera").gameObject;
+		mapCam = mainTrans.Find("MapCamera").gameObject;
 		
 		aAV_UI_script = dateTimeSetting.GetComponent<aAV_UI>();
 		aAV_icon_script = mainTrans.Find("Menu/ToggleSwitch").gameObject.GetComponent<aAV_icon>();
 		aAV_Move_script = mainTrans.Find("Avatar").gameObject.GetComponent<aAV_MoveBehaviour>();
 		aAV_Fly_script = mainTrans.Find("Avatar").gameObject.GetComponent<aAV_FlyBehaviour>();
 		aAV_Zoom_script = mainTrans.Find("Stellarium").gameObject.GetComponent<aAV_StelMouseZoom>();
-
-		aAV_Cam_script = GameObject.Find("XR Origin").transform.Find("Camera Offset/MainCamera").gameObject.GetComponent<aAV_ThirdPersonOrbitCamBasic>();
+		aAV_Compass_script = mainTrans.Find("LineCanvas").gameObject.GetComponent<aAV_CompassMap>();
+		aAV_MarkerCam_script = mainTrans.Find("Menu/CamEdit").gameObject.GetComponent<aAV_CamEdit>();
+		aAV_Cam_script = GameObject.Find("XR Origin").transform.Find("Camera Offset/Main Camera").gameObject.GetComponent<aAV_ThirdPersonOrbitCamBasic>();
 	}
 	
 	void Update(){		//押している間連続処理系（時刻変更等）
@@ -96,9 +124,9 @@ public class aAV_Event : MonoBehaviour
 				pressTime += Time.deltaTime;
 				if(selectDate && checkTime > 0){
 					checkTime -= 0.02f;
-					if(Gamepad.current.buttonNorth.isPressed && pressTime > 0.5f){
+					if(Gamepad.current.dpad.up.isPressed && pressTime > 0.5f){
 						InputFieldUp(dateNo);
-					}else if(Gamepad.current.buttonWest.isPressed && pressTime > 0.5f){
+					}else if(Gamepad.current.dpad.down.isPressed && pressTime > 0.5f){
 						InputFieldDown(dateNo);
 					}
 					if(Gamepad.current.buttonEast.isPressed){
@@ -111,10 +139,10 @@ public class aAV_Event : MonoBehaviour
 		}
 		
 		//XR Controll処理系(XR Controllの押し続ける系の処理はInputActionでうまくとらえられないため、こちらで記述。改善されたらInputActionに移行予定)
-    	if(XRGeneralSettings.Instance && XRGeneralSettings.Instance.Manager.activeLoader != null){
-    		moveH=0;
-    		moveV=0;
-    		rotateH=0;
+		if(XRGeneralSettings.Instance && XRGeneralSettings.Instance.Manager.activeLoader != null){
+			moveH=0;
+			moveV=0;
+			rotateH=0;
 			if(moveXR.action.ReadValue<Vector2>().sqrMagnitude > 0.1f){
 				moveH=moveXR.action.ReadValue<Vector2>().x * 0.5f;
 				moveV=moveXR.action.ReadValue<Vector2>().y * 0.5f;
@@ -133,18 +161,86 @@ public class aAV_Event : MonoBehaviour
 				rise = false;
 			}
 		}
+
+		//Zoom処理
+		if(zoom){
+			aAV_Zoom_script.Zoom();
+		}
+	
+		//Copyright 描画処理
+		Ray ray = Camera.main.ViewportPointToRay(new Vector2(0.5f, 0f));
+		checkRay(ray);
+		if(aAV_Public.copyright != ""){
+			copyright.text = "Copyright : "+aAV_Public.copyright;
+		}else{
+			copyright.text = "";
+		}
+		aAV_Public.copyright="";
+	}
+
+	private void checkRay(Ray ray){		//copyright確認用Ray
+		foreach (RaycastHit hit in Physics.RaycastAll(ray)){
+			if(hit.collider.name.Contains("terrain")){
+				string tNo = hit.collider.name.Trim().Substring(hit.collider.name.Trim().Length - 2);
+				if(tNo == "00"){
+					aAV_Public.copyright += checkCopyright(aAV_Public.basicInfo.copyright_N);
+				}else{
+					aAV_Public.copyright += checkCopyright(aAV_Public.basicInfo.copyright_W);
+				}
+			}
+		}
+	}
+	private string checkCopyright(string text){
+		string copy = "";
+		if(!aAV_Public.copyright.Contains(text)){
+			if(aAV_Public.copyright !=""){
+				copy = ", ";
+			}
+			copy += text;
+		}
+		return copy;
 	}
 	
-	
-
-	public void OnDo(InputAction.CallbackContext context) {		//決定操作
+	public void OnBack(InputAction.CallbackContext context) {		//キャンセル操作：GamePAD "×"
 		if (!context.performed) return;
-		if (!selectStella && !selectMenu && !selectDate && !textInput){	//Stella Menu On
+		if (!selectStella && !selectInfo && !selectDate && !textInput){	//Stella Menu On
 			GetComponent<AudioSource>().PlayOneShot (audioOpen);
 			selectGameobject.SetActive(true);
+			stellaSelectPos();
 			selectStella = true;
-			selectMenu = false;
+			selectInfo = false;
 			selectDate = false;
+		}else if(selectStella || selectInfo || selectDate){		//全Off
+			GetComponent<AudioSource>().PlayOneShot (audioClose);
+			if(markerCam.activeSelf){
+				aAV_MarkerCam_script.OnCancel();
+			}else if(mapCam.activeSelf){
+				aAV_Compass_script.CloseCompassMap();
+			}else{
+				dateTimeSetting.GetComponent<Image>().color = dateOffColor ;
+				selectGameobject.SetActive(false);
+				UnselectInputField();
+				UnselectInfotarget();
+				stellaSelectPos();
+				selectStella = false;
+				selectInfo = false;
+				selectDate = false;
+			}
+		}else{
+			Debug.Log("Back button");
+		}
+	}
+	
+	public void OnDo(InputAction.CallbackContext context) {		//決定操作：GamePAD "○"
+		if (!context.performed) return;
+		if (!selectDate && !selectStella && !selectInfo && !textInput){	//日付メニュー On
+			GetComponent<AudioSource>().PlayOneShot (audioOpen);
+			dateTimeSetting.GetComponent<Image>().color = OnColor ;
+			selectStella = false;
+			selectInfo = false;
+			selectDate = true;
+			SelectInputField(dateNo);
+			Debug.Log("Date On");
 		}else if(selectStella){		//Stella実行
 			GetComponent<AudioSource>().PlayOneShot (audioButton);
 			switch(stellaNo){
@@ -178,44 +274,38 @@ public class aAV_Event : MonoBehaviour
 				default:
 					break;
 			}
-			Debug.Log("Menu Toggle");
 		}else if(selectDate){		//Date実行
 			GetComponent<AudioSource>().PlayOneShot (audioButton);
 			aAV_UI_script.GenerateSkybox();
-		}else if(selectMenu){		//メニュバー確定
+		}else if(selectInfo){		//InfoView実行
 			GetComponent<AudioSource>().PlayOneShot (audioButton);
-			Debug.Log("Menu Toggle");
+			if(infoNo != 0){
+				if(infoNo <= aAV_Public.rplist.Count){
+					if(infoAction == 1){
+						targetGameobject.transform.GetChild(0).GetComponent<Toggle> ().isOn = !(targetGameobject.transform.GetChild(0).GetComponent<Toggle>().isOn);
+					}else if(infoAction ==2){
+						targetGameobject.GetComponent<aAV_InfoAction>().JumpPosition();
+					}else{
+						targetGameobject.GetComponent<aAV_InfoAction>().CamView();
+					}
+				}else if(infoNo <= aAV_Public.rplist.Count+aAV_Public.linelist.Count){
+					if(infoAction == 1){
+						targetGameobject.transform.GetChild(0).GetComponent<Toggle> ().isOn = !(targetGameobject.transform.GetChild(0).GetComponent<Toggle>().isOn);
+					}else{
+						targetGameobject.GetComponent<aAV_InfoAction>().ShowCompassMap();
+					}
+				}else{
+						targetGameobject.transform.GetChild(0).GetComponent<Toggle> ().isOn = !(targetGameobject.transform.GetChild(0).GetComponent<Toggle>().isOn);
+				}
+			}
 		}else{	//その他決定動作
 			Debug.Log("OK button");
 		}
 	}
 
-	public void OnBack(InputAction.CallbackContext context) {
-		if (!context.performed) return;
-		if (!selectDate && !selectStella && !selectMenu && !textInput){	//日付メニュー On
-			GetComponent<AudioSource>().PlayOneShot (audioOpen);
-			dateTimeSetting.GetComponent<Image>().color = dateOnColor ;
-			selectStella = false;
-			selectMenu = false;
-			selectDate = true;
-			SelectInputField(dateNo);
-			Debug.Log("Date On");
-		}else if(selectStella || selectMenu || selectDate){		//全Off
-			GetComponent<AudioSource>().PlayOneShot (audioClose);
-			dateTimeSetting.GetComponent<Image>().color = dateOffColor ;
-			selectGameobject.SetActive(false);
-			UnselectInputField();
-			selectStella = false;
-			selectMenu = false;
-			selectDate = false;
-		}else{
-			Debug.Log("Back button");
-		}
-	}
-	
 	public void OnMove(InputAction.CallbackContext context) {
-		if (context.started) return;
-		if(!selectStella && !selectDate && !selectMenu  && !textInput){	//通常操作
+		if (context.started) return; //最初の押し下げは無視
+		if(!selectStella && !selectDate && !selectInfo  && !textInput){	//通常操作
 			moveH=context.ReadValue<Vector2>().x;
 			moveV=context.ReadValue<Vector2>().y;
 		}else if(selectStella){	//Stellaメニュー操作
@@ -231,10 +321,50 @@ public class aAV_Event : MonoBehaviour
 				if(stellaNo < 0){
 					stellaNo = 0;
 				}
+			}else if((Gamepad.current.dpad.up.wasPressedThisFrame)&&(aAV_Public.displayMode == 2)){
+				GetComponent<AudioSource>().PlayOneShot (audioSelect);
+				switch(stellaNo){
+					case 2:
+						stellaNo = 0;
+						break;
+					case 3:
+						stellaNo = 1;
+						break;
+					case 5:
+						stellaNo = 2;
+						break;
+					case 6:
+						stellaNo = 3;
+						break;
+					case 7:
+						stellaNo = 4;
+						break;
+					default:
+						break;
+				}
+			}else if((Gamepad.current.dpad.down.wasPressedThisFrame)&&(aAV_Public.displayMode == 2)){
+				GetComponent<AudioSource>().PlayOneShot (audioSelect);
+				switch(stellaNo){
+					case 0:
+						stellaNo = 2;
+						break;
+					case 1:
+						stellaNo = 3;
+						break;
+					case 2:
+						stellaNo = 5;
+						break;
+					case 3:
+						stellaNo = 6;
+						break;
+					case 4:
+						stellaNo = 7;
+						break;
+					default:
+						break;
+				}
 			}
-			var pos = selectGameobject.transform.localPosition;
-			pos.x = stellaNo*110;
-			selectGameobject.transform.localPosition = pos;
+			stellaSelectPos();
 		}else if(selectDate){	//日付操作
 			UnselectInputField();
 			if(Gamepad.current.dpad.right.wasPressedThisFrame){
@@ -250,55 +380,61 @@ public class aAV_Event : MonoBehaviour
 					dateNo = 1;
 				}
 			}else if(Gamepad.current.dpad.up.wasPressedThisFrame){
-				GetComponent<AudioSource>().PlayOneShot (audioSelect);
-				if(dateNo>3){
-					dateNo -= 3;
-				}
+				pressTime = 0f;
+				checkTime = 0f;
+				InputFieldUp(dateNo);
 			}else if(Gamepad.current.dpad.down.wasPressedThisFrame){
-				GetComponent<AudioSource>().PlayOneShot (audioSelect);
-				if(dateNo==0){
-					dateNo = 1;
-				}else if(dateNo <4){
-					dateNo += 3;
-				}
+				pressTime = 0f;
+				checkTime = 0f;
+				InputFieldDown(dateNo);
 			}
 			SelectInputField(dateNo);
-		}else if(selectMenu){	//menuバー操作
-			Debug.Log("menuバー");
+		}else if(selectInfo){	//InfoView操作
+			UnselectInfotarget();
+			if(Gamepad.current.dpad.up.wasPressedThisFrame){
+				infoNo -=1;
+			}else if(Gamepad.current.dpad.down.wasPressedThisFrame){
+				infoNo +=1;
+			}
+			if(infoNo < 1){
+				infoNo = 1;
+			}
+			if(infoNo > aAV_Public.rplist.Count+aAV_Public.linelist.Count+aAV_Public.datalist.Count){
+				infoNo = aAV_Public.rplist.Count+aAV_Public.linelist.Count+aAV_Public.datalist.Count;
+			}
+			if(Gamepad.current.dpad.left.wasPressedThisFrame){
+				infoAction -=1;
+			}else if(Gamepad.current.dpad.right.wasPressedThisFrame){
+				infoAction +=1;
+			}
+			if(infoAction < 1){
+				infoAction = 1;
+			}
+			selectInfotarget();
 		}
 	}
 	
 	public void OnLook(InputAction.CallbackContext context) {
-		if (context.started) return;
 		rotateH=context.ReadValue<Vector2>().x;
 		rotateV=context.ReadValue<Vector2>().y;
 	}
 
-	public void OnFly(InputAction.CallbackContext context) {
-		if (!context.performed) return;
-		if(!selectStella && !selectDate && !selectMenu && !textInput){	//通常操作
+	public void OnFly(InputAction.CallbackContext context) { //飛行モード操作：GamePAD "□"
+		if (!context.started) return;	//最初の押し下げのみ認識(2連認識対策)
+		if(!selectStella && !selectDate && !selectInfo && !textInput){	//通常操作
 			aAV_Fly_script.ChangeFly();
-		}else if (selectDate){	//CountDown操作
-			pressTime = 0f;
-			checkTime = 0f;
-			InputFieldDown(dateNo);
 		}
 	}	
 
-	public void OnView(InputAction.CallbackContext context) {
-		if (!context.performed) return;
-		if(!selectStella && !selectDate && !selectMenu && !textInput){	//通常操作
+	public void OnView(InputAction.CallbackContext context) { //1st/3rd View操作
+		if (!context.started) return;	//最初の押し下げのみ認識(2連認識対策)
+		if(!selectStella && !selectDate && !selectInfo && !textInput){	//通常操作
 			aAV_Move_script.ChangeAim();
-		}else if (selectDate){	//CountUp操作
-			pressTime = 0f;
-			checkTime = 0f;
-			InputFieldUp(dateNo);
 		}
 	}	
 	
 	public void OnJump(InputAction.CallbackContext context) {
-		if (context.started) return;
-		if(!selectStella && !selectDate && !selectMenu && !textInput){	//通常操作
+		if(!selectStella && !selectDate && !selectInfo && !textInput){	//通常操作
 			if(context.phase == InputActionPhase.Performed){	//アクションが実行されたばかりかどうかを判断
 				rise = true;
 				aAV_Move_script.DoJump();
@@ -309,8 +445,7 @@ public class aAV_Event : MonoBehaviour
 	}
 
 	public void OnSprint(InputAction.CallbackContext context) {
-		if (context.started) return;
-		if(!selectStella && !selectDate && !selectMenu && !textInput){	//通常操作
+		if(!selectStella && !selectDate && !selectInfo && !textInput){	//通常操作
 			if(context.ReadValue<float>() > 0){
 				sprint = true;
 			}else{
@@ -320,16 +455,141 @@ public class aAV_Event : MonoBehaviour
 	}
 	
 	public void OnZoom(InputAction.CallbackContext context) {
-		if (!context.performed) return;
-		if (context.ReadValue<float>()>0){
-			aAV_Zoom_script.ZoomIn();
-		}
-		if (context.ReadValue<float>()<0){
-			aAV_Zoom_script.ZoomOut();
+		if (context.started){	//Controll Modifieredの不具合対策
+			aAV_Zoom_script.stepOrFactor = context.ReadValue<float>();
+			aAV_Zoom_script.Zoom();
+		}else if (context.performed){	//通常のZoom処理
+			aAV_Zoom_script.stepOrFactor = context.ReadValue<float>();
+			zoom = true;
+		}else{
+			zoom = false;
 		}
 	}
 
+	public void OnInfoview(InputAction.CallbackContext context) {//InfoView操作：GamePAD "△"
+		if (!context.started) return;	//最初の押し下げのみ認識(2連認識対策)
+		if(aAV_Public.displayMode == 1){
+			if(infoGameobject.activeSelf){
+				rightHand.enabled = false;
+			}else{
+				rightHand.enabled = true;
+			}
+			menuObj.GetComponent<aAV_Direction>().ShowInfo();
+		}else{
+			if(!selectInfo){
+				selectStella = false;
+				selectInfo = true;
+				selectDate = false;
+				GetComponent<AudioSource>().PlayOneShot (audioOpen);
+				selectInfotarget();
+			}
+		}
+	}
 	
+	public void OnUI(InputAction.CallbackContext context) {
+		if (!context.started) return;	//最初の押し下げのみ認識(2連認識対策)
+		if (menuObj.activeSelf){
+			menuObj.SetActive(false);
+		}else{
+			menuObj.SetActive(true);
+		}
+	}
+	
+	public void OnDatetime(InputAction.CallbackContext context) {
+		if(dateTimeSetting.activeSelf){
+			rightHand.enabled = false;
+			dateTimeSetting.SetActive(false);
+		}else{
+			rightHand.enabled = true;
+			dateTimeSetting.SetActive(true);
+			infoGameobject.SetActive(false);
+			topbarGameobject.SetActive(false);
+			stellaGameobject.SetActive(false);
+			settingGameobject.SetActive(false);
+		}
+	}
+	
+	public void OnStellaicon(InputAction.CallbackContext context) {
+		if(stellaGameobject.activeSelf){
+			rightHand.enabled = false;
+			stellaGameobject.SetActive(false);
+		}else{
+			rightHand.enabled = true;
+			stellaGameobject.SetActive(true);
+			infoGameobject.SetActive(false);
+			topbarGameobject.SetActive(false);
+			dateTimeSetting.SetActive(false);
+			settingGameobject.SetActive(false);
+		}
+	}
+	
+	public void OnSetting(InputAction.CallbackContext context) {
+		if(settingGameobject.activeSelf){
+			rightHand.enabled = false;
+			settingGameobject.SetActive(false);
+		}else{
+			rightHand.enabled = true;
+			settingGameobject.SetActive(true);
+			infoGameobject.SetActive(false);
+			topbarGameobject.SetActive(false);
+			dateTimeSetting.SetActive(false);
+			stellaGameobject.SetActive(false);
+		}
+	}
+
+	private void UnselectInfotarget(){
+		GameObject[] infoArray = GameObject.FindGameObjectsWithTag("rpClone");
+		foreach(GameObject obj in infoArray){
+			obj.GetComponent<Image>().color = OffColor ;
+			obj.transform.Find("view/Background").gameObject.GetComponent<Image>().color = Color.white;
+			obj.transform.Find("GoButton").gameObject.GetComponent<Image>().color = Color.white;
+			obj.transform.Find("CamButton").gameObject.GetComponent<Image>().color = Color.white;
+		}
+		infoArray = GameObject.FindGameObjectsWithTag("lnClone");
+		foreach(GameObject obj in infoArray){
+			obj.GetComponent<Image>().color = OffColor ;
+			obj.transform.Find("view/Background").gameObject.GetComponent<Image>().color = Color.white;
+			obj.transform.Find("MapButton").gameObject.GetComponent<Image>().color = Color.white;
+		}
+		infoArray = GameObject.FindGameObjectsWithTag("obClone");
+		foreach(GameObject obj in infoArray){
+			obj.GetComponent<Image>().color = OffColor ;
+			obj.transform.Find("view/Background").gameObject.GetComponent<Image>().color = Color.white;
+		}
+	}
+
+	public void selectInfotarget(){
+		if(infoNo != 0){
+			if(infoNo <= aAV_Public.rplist.Count){
+				targetGameobject = infoGameobject.transform.Find("ScrollView/Viewport/Log/rpInfo").GetChild(infoNo).gameObject;
+				if(infoAction == 1){
+					targetGameobject.transform.Find("view/Background").gameObject.GetComponent<Image>().color = inputColor;
+				}else if(infoAction ==2){
+					targetGameobject.transform.Find("GoButton").gameObject.GetComponent<Image>().color = inputColor;
+				}else{
+					targetGameobject.transform.Find("CamButton").gameObject.GetComponent<Image>().color = inputColor;
+					infoAction = 3;
+				}
+			}else if(infoNo <= aAV_Public.rplist.Count+aAV_Public.linelist.Count){
+				targetGameobject = infoGameobject.transform.Find("ScrollView/Viewport/Log/lnInfo").GetChild(infoNo - aAV_Public.rplist.Count).gameObject;
+				if(infoAction == 1){
+					targetGameobject.transform.Find("view/Background").gameObject.GetComponent<Image>().color = inputColor;
+				}else{
+					targetGameobject.transform.Find("MapButton").gameObject.GetComponent<Image>().color = inputColor;
+					infoAction = 2;
+				}
+			}else{
+				targetGameobject = infoGameobject.transform.Find("ScrollView/Viewport/Log/obInfo").GetChild(infoNo - aAV_Public.rplist.Count - aAV_Public.linelist.Count).gameObject;
+				targetGameobject.transform.Find("view/Background").gameObject.GetComponent<Image>().color = inputColor;
+				infoAction = 1;
+			}
+			targetGameobject.GetComponent<Image>().color = OnColor ;
+		}else{
+			selectInfo = false;
+		}
+	}
+	
+
 	private void UnselectInputField(){
 		tzInputField.GetComponent<Image>().color = Color.white;
 		yearInputField.GetComponent<Image>().color = Color.white;
@@ -423,11 +683,31 @@ public class aAV_Event : MonoBehaviour
 	}
 	
 	private void OnApplicationQuit()
-    {
-    	//XRモードの時は、HMDとのコネクションを終了してからQUIT
-    	if(XRGeneralSettings.Instance && XRGeneralSettings.Instance.Manager.activeLoader != null){
+	{
+		//XRモードの時は、HMDとのコネクションを終了してからQUIT
+		if(XRGeneralSettings.Instance && XRGeneralSettings.Instance.Manager.activeLoader != null){
 			XRGeneralSettings.Instance.Manager.StopSubsystems();
 			XRGeneralSettings.Instance.Manager.DeinitializeLoader();
 		}
-    }
+	}
+
+	public void stellaSelectPos(){
+		var pos = selectGameobject.transform.localPosition;
+		if(aAV_Public.displayMode == 2){
+			if(stellaNo < 2){
+				pos.x = stellaNo*50;
+				pos.y = 140;
+			}else if(stellaNo < 5){
+				pos.x = (stellaNo-2)*50;
+				pos.y = 70;
+			}else{
+				pos.x = (stellaNo-5)*50;
+				pos.y = 0;
+			}
+		}else{
+			pos.x = stellaNo*50;
+			pos.y = 0;
+		}
+		selectGameobject.transform.localPosition = pos;
+	}
 }

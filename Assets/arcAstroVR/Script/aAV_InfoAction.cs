@@ -14,6 +14,8 @@ public class aAV_InfoAction : MonoBehaviour
 	private GameObject objectEdit;
 	private GameObject lineEdit;
 	private GameObject lineCanvas;
+	private GameObject camEdit;
+	private GameObject markerCam;
 	private GameObject mapCam;
 	private aAV_Direction direction;
 	private aAV_CompassMap compass;
@@ -26,8 +28,9 @@ public class aAV_InfoAction : MonoBehaviour
 		objectEdit = mainTrans.Find("Menu/ObjectEdit").gameObject;
 		lineEdit = mainTrans.Find("Menu/LineEdit").gameObject;
 		lineCanvas = mainTrans.Find("LineCanvas").gameObject;
+		camEdit = mainTrans.Find("Menu/CamEdit").gameObject;
+		markerCam = mainTrans.Find("MarkerCamera").gameObject;
 		mapCam = mainTrans.Find("MapCamera").gameObject;
-
 		direction = mainTrans.Find("Menu").GetComponent<aAV_Direction>();
 		compass = mainTrans.Find("LineCanvas").GetComponent<aAV_CompassMap>();
 	}
@@ -69,6 +72,16 @@ public class aAV_InfoAction : MonoBehaviour
 		avatar.transform.position = aAV_Public.rplist[ListNo].gameobject.transform.position;
 	}
 
+	//Camボタン
+	public void CamView(){
+		if(aAV_Public.displayMode != 1){
+			markerCam.SetActive(true);
+			markerCam.transform.position = aAV_Public.rplist[ListNo].gameobject.transform.position;
+			camEdit.SetActive(true);
+			camEdit.GetComponent<aAV_CamEdit>().CamEdit(ListNo);
+		}
+	}
+
 	//マーカーEditボタン
 	public void ShowMarkerEdit(){
 		direction.CloseDialog();
@@ -92,9 +105,11 @@ public class aAV_InfoAction : MonoBehaviour
 
 	//CompassMapボタン
 	public void ShowCompassMap(){
-		direction.CloseDialog();
-		lineCanvas.SetActive(true);
-		compass.ShowCompassMap(ListNo);
+		if(aAV_Public.displayMode != 1){
+			direction.CloseDialog();
+			lineCanvas.SetActive(true);
+			compass.ShowCompassMap(ListNo);
+		}
 	}
 
 }

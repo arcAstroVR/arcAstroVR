@@ -61,17 +61,11 @@ public class aAV_ThirdPersonOrbitCamBasic : MonoBehaviour
 	
 	void Update()
 	{
-		if(!aAV_Public.uiDrag)	
+		if(!aAV_Public.uiDrag && !EventSystem.current.IsPointerOverGameObject(0))	
 		{
 			// 視点移動
-			if(Mouse.current.leftButton.isPressed){ //左マウスボタン+Drag時のみ視点移動
-				Vector2 velocity=Mouse.current.delta.ReadValue()*mouseSensitivity;
-				angleH += Mathf.Clamp(velocity.x, -1, 1) * horizontalAimingSpeed;
-				angleV += Mathf.Clamp(velocity.y, -1, 1) * verticalAimingSpeed;
-			}else{		
-				angleH += Mathf.Clamp(aAV_Event.rotateH, -1, 1) * 60 * horizontalAimingSpeed * Time.deltaTime;
-				angleV += Mathf.Clamp(aAV_Event.rotateV, -1, 1) * 60 * verticalAimingSpeed * Time.deltaTime;
-			}
+			angleH += Mathf.Clamp(aAV_Event.rotateH, -1, 1) * 60 * horizontalAimingSpeed * Time.deltaTime;
+			angleV += Mathf.Clamp(aAV_Event.rotateV, -1, 1) * 60 * verticalAimingSpeed * Time.deltaTime;
 
 			if( aAV_Public.displayMode == 1){	//HMD出力の場合は、上下0度固定
 				angleV = 0;

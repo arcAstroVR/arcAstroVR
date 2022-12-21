@@ -23,10 +23,9 @@ public class aAV_FileSet : MonoBehaviour {
 	[SerializeField]
 	private HumanoidAvatarMapper _humanoidAvatarMapper;
 
-	public Material terrainMaterial;
-
 	private aAV_Public aav_public;
 	private aAV_GIS gis;
+	private aAV_ThirdPersonOrbitCamBasic orbit_cam;
 	private GameObject errorstatus;
 	private GameObject avatar;
 	private int obj_count=0;
@@ -36,6 +35,7 @@ public class aAV_FileSet : MonoBehaviour {
 		aav_public = GameObject.Find("Main").GetComponent<aAV_Public>();
 		gis = GameObject.Find("Main").GetComponent<aAV_GIS>();
 		avatar = GameObject.Find("Main").transform.Find("Avatar").gameObject;
+		orbit_cam = GameObject.Find("Main Camera").GetComponent<aAV_ThirdPersonOrbitCamBasic>();
 		errorstatus = GameObject.Find("errorMessage");
 	}
 	
@@ -53,7 +53,7 @@ public class aAV_FileSet : MonoBehaviour {
 			uwr.chunkedTransfer = false;
 			yield return uwr.SendWebRequest();
 			if (uwr.isNetworkError || uwr.isHttpError){
-				errorstatus.GetComponent<Text>().text = "Stellariumとの通信が確認できませんでした。\nStellariumを起動してください。";
+				errorstatus.GetComponent<Text>().text = "Communication with Stellarium could not be verified, please start Stellarium.";
 			} else {
 				errorstatus.GetComponent<Text>().text = "";
 				GameObject.Find("Canvas").transform.Find("selectButton").gameObject.SetActive(true);
@@ -65,6 +65,7 @@ public class aAV_FileSet : MonoBehaviour {
 	public void selectDataset() {
 		aAV_Public.basicInfo.filePath = StandaloneFileBrowser.OpenFilePanel( "Open File", "", "txt", true )[0].Name;
 		if(aAV_Public.basicInfo.filePath != ""){
+			errorstatus.GetComponent<Text>().text = "";
 			//Datasetの読み込み
 			ReadFile(aAV_Public.basicInfo.filePath);
 			string filedir = Path.GetDirectoryName(aAV_Public.basicInfo.filePath)+"/";
@@ -82,6 +83,15 @@ public class aAV_FileSet : MonoBehaviour {
 			aAV_Public.basicInfo.filedir = filedir;
 			Debug.Log("fileDIR="+aAV_Public.basicInfo.filedir + ", liveDIR=" +aAV_Public.basicInfo.livedir);
 			
+			//必須項目の確認
+			CheckRequire();
+			if(errorstatus.GetComponent<Text>().text != ""){
+				return;
+			}
+
+			//selectButton非表示
+			GameObject.Find("selectButton").SetActive(false);
+
 			//PlayerPrefの読み込み
 			LocalizationSettings.SelectedLocale = Locale.CreateLocale(PlayerPrefs.GetString ("Language", "en"));
 			aav_public.GetEntry();
@@ -96,9 +106,6 @@ public class aAV_FileSet : MonoBehaviour {
 			}else{
 				PlayerPrefs.SetString("Path", aAV_Public.basicInfo.filePath);
 			}
-			
-			//selectButton非表示
-			GameObject.Find("selectButton").SetActive(false);
 			
 			//Stellarium起動
 			GameObject.Find("Main").transform.Find("Stellarium").gameObject.SetActive(true);
@@ -137,25 +144,31 @@ public class aAV_FileSet : MonoBehaviour {
 				string[] dataProp = dataVal[0].Split('.');
 				
 				//基本情報の読み込み
-				if (dataProp[0].Trim() == "location") aAV_Public.basicInfo.location = dataVal[1].Trim().Normalize();
-				if (dataProp[0].Trim() == "country") aAV_Public.basicInfo.country = dataVal[1].Trim().Normalize();
-				if (dataProp[0].Trim() == "timezone") aAV_Public.basicInfo.timezone = dataVal[1].Trim();
+				if (dataProp[0].Trim() == "location") aAV_Public.basicInfo.location = dataVal[1].Trim().Trim('"').Normalize();
+				if (dataProp[0].Trim() == "country") aAV_Public.basicInfo.country = dataVal[1].Trim().Trim('"').Normalize();
+				if (dataProp[0].Trim() == "timezone") aAV_Public.basicInfo.timezone = dataVal[1].Trim().Trim('"');
 				if (dataProp[0].Trim() == "date") {
-					string[] date = dataVal[1].Trim().Split('/');
+					string[] date = dataVal[1].Trim().Trim('"').Split('/');
 					aAV_Public.basicInfo.year = int.Parse(date[0].Trim());
 					aAV_Public.basicInfo.month = int.Parse(date[1].Trim());
 					aAV_Public.basicInfo.day = int.Parse(date[2].Trim());
 				}
 				if (dataProp[0].Trim() == "time") {
-					string[] time = dataVal[1].Trim().Split(':');
+					string[] time = dataVal[1].Trim().Trim('"').Split(':');
 					aAV_Public.basicInfo.hour = int.Parse(time[0].Trim());
 					aAV_Public.basicInfo.minute = int.Parse(time[1].Trim());
 					aAV_Public.basicInfo.second= int.Parse(time[2].Trim());
 				}
-				if (dataProp[0].Trim() == "mesh") aAV_Public.basicInfo.area= float.Parse(dataVal[1].Trim())*4096;
+				if (dataProp[0].Trim() == "mesh") aAV_Public.basicInfo.area= float.Parse(dataVal[1].Trim().Trim('"'))*4096;
 				if (dataProp[0].Trim() == "type") {
-					aAV_Public.basicInfo.type= dataVal[1].Trim().Substring(0, 2);
-					aAV_Public.basicInfo.zone= int.Parse(dataVal[1].Trim().Substring(dataVal[1].Trim().Length - 2));
+					aAV_Public.basicInfo.type= dataVal[1].Trim().Trim('"').Substring(0, 2);
+					string zone = dataVal[1].Trim().Trim('"').Substring(dataVal[1].Trim().Trim('"').Length - 2);
+					int n;
+					if(Int32.TryParse(zone, out n)){
+						aAV_Public.basicInfo.zone= int.Parse(zone);
+					}else{
+						errorstatus.GetComponent<Text>().text +="Error : 'type' setting is incorrect.\n";
+					}
 					aAV_Public.center.type = aAV_Public.basicInfo.type;
 					if(aAV_Public.basicInfo.type == "JP"){
 						aAV_Public.center.JPRCS_zone = aAV_Public.basicInfo.zone;
@@ -164,17 +177,49 @@ public class aAV_FileSet : MonoBehaviour {
 					}
 				}
 				if (dataProp[0].Trim() == "center") {
-					string[] center = dataVal[1].Trim().Split(',');
-					if (center.Length==2){
+					string[] center= dataVal[1].Trim().Trim('"').Split(',');
+					if (center.Length==3){
 						aAV_Public.basicInfo.center_E = double.Parse(center[0].Trim());
 						aAV_Public.basicInfo.center_N = double.Parse(center[1].Trim());
+						aAV_Public.basicInfo.center_H= float.Parse(center[2].Trim());
 					}else{
-						errorstatus.GetComponent<Text>().text +="Error : "+dataProp[0]+"."+dataProp[1]+"= "+dataVal[1].Trim()+"\n";
+						errorstatus.GetComponent<Text>().text +="Error : 'center' setting is incorrect. (center = "+dataVal[1].Trim()+")\n";
 					}
 					gis.CenterCalc();
 				}
-				if (dataProp[0].Trim() == "height") aAV_Public.basicInfo.center_H = float.Parse(dataVal[1].Trim());
-				if (dataProp[0].Trim() == "avatar") aAV_Public.basicInfo.avatar = dataVal[1].Trim();
+				if (dataProp[0].Trim() == "avatar") aAV_Public.basicInfo.avatar = dataVal[1].Trim().Trim('"');
+				if (dataProp[0].Trim() == "avatar_height") {
+					aAV_Public.basicInfo.avatar_H = float.Parse(dataVal[1].Trim().Trim('"'));
+					Debug.Log("Avatar Height = "+ aAV_Public.basicInfo.avatar_H + "cm");
+					avatar.transform.localScale = (aAV_Public.basicInfo.avatar_H / 176f) * Vector3.one;
+					orbit_cam.pivotOffset = new Vector3(0f,1.654f*aAV_Public.basicInfo.avatar_H/176f,0f);
+					orbit_cam.ResetTargetOffsets();
+				}
+				if (dataProp[0].Trim() == "copyright"){
+					string[] dataval = dataVal[1].Trim().Split(',');
+					var copy = new List<string>();
+					for(int i=0; i<dataval.Length; i++){
+						var addstr = "";
+						if(dataval[i].Trim()[0] == '"'){
+							dataval[i] = dataval[i].TrimStart();
+							for(int n=i; n<dataval.Length; n++){
+								i = n;
+								addstr += ","+dataval[n];
+								if(dataval[n][dataval[n].Length-1] == '"'){
+									addstr = addstr.Remove(addstr.Length-1, 1).Remove(0, 2);
+									break;
+								}
+							}
+						}else{
+							addstr = dataval[i];
+						}
+						copy.Add(addstr);
+					}
+					aAV_Public.basicInfo.copyright_W = copy[0].Trim().Normalize();
+					if (copy.Count >1) {
+						aAV_Public.basicInfo.copyright_N = copy[1].Trim().Normalize();
+					}
+				}
 
 				//マーカーの読み込み
 				if (dataProp[0].StartsWith("marker")){
@@ -187,23 +232,41 @@ public class aAV_FileSet : MonoBehaviour {
 					}
 					if(dataVal[1].Trim() != ""){
 						if (dataProp[1].Trim() == "name"){
-							aAV_Public.rplist[i].name = dataVal[1].Trim().Normalize();
+							aAV_Public.rplist[i].name = dataVal[1].Trim().Trim('"').Normalize();
 						}else if (dataProp[1].Trim() == "origin"){
-							string[] origin = dataVal[1].Trim().Split(',');
+							string[] origin = dataVal[1].Trim().Trim('"').Split(',');
 							//unity空間のXYに変換
-							if (origin.Length==2){
+							if (origin.Length==3){
 								double[] XY=gis.UnityXY(double.Parse(origin[0].Trim()), double.Parse(origin[1].Trim()));
 								aAV_Public.rplist[i].origin_E = XY[0];
 								aAV_Public.rplist[i].origin_N = XY[1];
+								aAV_Public.rplist[i].origin_H = float.Parse(origin[2].Trim());
 							}else{
 								errorstatus.GetComponent<Text>().text +="Error : "+dataProp[0]+"."+dataProp[1]+"= "+dataVal[1].Trim()+"\n";
 							}
-						}else if (dataProp[1].Trim() == "height"){
-							aAV_Public.rplist[i].origin_H = float.Parse(dataVal[1].Trim());
 						}else if (dataProp[1].Trim() == "color"){
-							aAV_Public.rplist[i].color = dataVal[1].Trim();
+							aAV_Public.rplist[i].color = dataVal[1].Trim().Trim('"');
 						}else if (dataProp[1].Trim() == "visible"){
-							aAV_Public.rplist[i].visible = Convert.ToBoolean(dataVal[1].Trim());
+							aAV_Public.rplist[i].visible = Convert.ToBoolean(dataVal[1].Trim().Trim('"'));
+						}else if (dataProp[1].Trim() == "cam_rotation"){
+							string[] rotaion = dataVal[1].Trim().Trim('"').Split(',');
+							if (rotaion.Length==1){
+								aAV_Public.rplist[i].cam_YAW = float.Parse(rotaion[0].Trim());
+								aAV_Public.rplist[i].cam_PITCH = 0f;
+								aAV_Public.rplist[i].cam_ROLL = 0f;
+							}else if (rotaion.Length==2){
+								aAV_Public.rplist[i].cam_YAW = float.Parse(rotaion[0].Trim());
+								aAV_Public.rplist[i].cam_PITCH = float.Parse(rotaion[1].Trim());
+								aAV_Public.rplist[i].cam_ROLL = 0f;
+							}else if (rotaion.Length==3){
+								aAV_Public.rplist[i].cam_YAW = float.Parse(rotaion[0].Trim());
+								aAV_Public.rplist[i].cam_PITCH = float.Parse(rotaion[1].Trim());
+								aAV_Public.rplist[i].cam_ROLL = float.Parse(rotaion[2].Trim());
+							}else{
+								errorstatus.GetComponent<Text>().text +="Error : "+dataProp[0]+"."+dataProp[1]+"= "+dataVal[1].Trim()+"\n";
+							}
+						}else if (dataProp[1].Trim() == "cam_fov"){
+							aAV_Public.rplist[i].cam_FOV = float.Parse(dataVal[1].Trim().Trim('"'));
 						}else{
 							errorstatus.GetComponent<Text>().text += "Error : "+dataProp[0]+"."+dataProp[1]+"= "+dataVal[1].Trim()+"\n";
 						}
@@ -221,17 +284,19 @@ public class aAV_FileSet : MonoBehaviour {
 					}
 					if(dataVal[1].Trim() != ""){
 						if (dataProp[1].Trim() == "name"){
-							aAV_Public.linelist[i].name = dataVal[1].Trim().Normalize();
-						}else if (dataProp[1].Trim() == "start_marker"){
-							aAV_Public.linelist[i].start_marker = int.Parse(dataVal[1].Trim());
-						}else if (dataProp[1].Trim() == "end_marker"){
-							aAV_Public.linelist[i].end_marker = int.Parse(dataVal[1].Trim());
+							aAV_Public.linelist[i].name = dataVal[1].Trim().Trim('"').Normalize();
+						}else if (dataProp[1].Trim() == "marker"){
+							string[] marker = dataVal[1].Trim().Trim('"').Split(',');
+							aAV_Public.linelist[i].start_marker = int.Parse(marker[0].Trim());
+							if ((marker.Length > 1)&&(marker[1].Trim()!="")){
+								aAV_Public.linelist[i].end_marker = int.Parse(marker[1].Trim());
+							}
 						}else if (dataProp[1].Trim() == "angle"){
-							aAV_Public.linelist[i].angle = dataVal[1].Trim();
+							aAV_Public.linelist[i].angle = dataVal[1].Trim().Trim('"');
 						}else if (dataProp[1].Trim() == "color"){
-							aAV_Public.linelist[i].color = dataVal[1].Trim();
+							aAV_Public.linelist[i].color = dataVal[1].Trim().Trim('"');
 						}else if (dataProp[1].Trim() == "visible"){
-							aAV_Public.linelist[i].visible = Convert.ToBoolean(dataVal[1].Trim());
+							aAV_Public.linelist[i].visible = Convert.ToBoolean(dataVal[1].Trim().Trim('"'));
 						}else{
 							errorstatus.GetComponent<Text>().text += "Error : "+dataProp[0]+"."+dataProp[1]+"= "+dataVal[1].Trim()+"\n";
 						}
@@ -250,40 +315,93 @@ public class aAV_FileSet : MonoBehaviour {
 					}
 					if(dataVal[1].Trim() != ""){
 						if (dataProp[1].Trim() == "name"){
-							aAV_Public.datalist[i].name = dataVal[1].Trim().Normalize();
+							aAV_Public.datalist[i].name = dataVal[1].Trim().Trim('"').Normalize();
 						}else if (dataProp[1].Trim() == "file"){
-							aAV_Public.datalist[i].file = dataVal[1].Trim().Normalize();
+							aAV_Public.datalist[i].file = dataVal[1].Trim().Trim('"').Normalize();
 						}else if (dataProp[1].Trim() == "origin"){
-							string[] origin = dataVal[1].Trim().Split(',');
-							if (origin.Length==2){
+							string[] origin = dataVal[1].Trim().Trim('"').Split(',');
+							if (origin.Length==3){
 								//unity空間のXYに変換
 								double[] XY=gis.UnityXY(double.Parse(origin[0].Trim()), double.Parse(origin[1].Trim()));
 								aAV_Public.datalist[i].origin_E =XY[0];
 								aAV_Public.datalist[i].origin_N = XY[1];
+								aAV_Public.datalist[i].origin_H = float.Parse(origin[2].Trim());
 							}else{
 								errorstatus.GetComponent<Text>().text +="Error : "+dataProp[0]+"."+dataProp[1]+"= "+dataVal[1].Trim()+"\n";
 							}
-						}else if (dataProp[1].Trim() == "height"){
-							aAV_Public.datalist[i].origin_H = float.Parse(dataVal[1].Trim());
-						}else if (dataProp[1].Trim() == "rot_E"){
-							aAV_Public.datalist[i].rot_E = float.Parse(dataVal[1].Trim());
-						}else if (dataProp[1].Trim() == "rot_N"){
-							aAV_Public.datalist[i].rot_N = float.Parse(dataVal[1].Trim());
-						}else if (dataProp[1].Trim() == "rot_H"){
-							aAV_Public.datalist[i].rot_H = float.Parse(dataVal[1].Trim());
+						}else if (dataProp[1].Trim() == "rotation"){
+							string[] rotaion = dataVal[1].Trim().Trim('"').Split(',');
+							if (rotaion.Length==1){
+								aAV_Public.datalist[i].rot_H = float.Parse(rotaion[0].Trim());
+								aAV_Public.datalist[i].rot_N = 0f;
+								aAV_Public.datalist[i].rot_E = 0f;
+							}else if (rotaion.Length==3){
+								aAV_Public.datalist[i].rot_H = float.Parse(rotaion[2].Trim());
+								aAV_Public.datalist[i].rot_N = float.Parse(rotaion[1].Trim());
+								aAV_Public.datalist[i].rot_E = float.Parse(rotaion[0].Trim());
+							}else{
+								errorstatus.GetComponent<Text>().text +="Error : "+dataProp[0]+"."+dataProp[1]+"= "+dataVal[1].Trim()+"\n";
+							}
 						}else if (dataProp[1].Trim() == "scale"){
-							aAV_Public.datalist[i].scale = float.Parse(dataVal[1].Trim());
-						}else if (dataProp[1].Trim() == "start"){
-							aAV_Public.datalist[i].start = dataVal[1].Trim();
-						}else if (dataProp[1].Trim() == "end"){
-							aAV_Public.datalist[i].end = dataVal[1].Trim();
+							string[] scale = dataVal[1].Trim().Trim('"').Split(',');
+							if (scale.Length==1){
+								aAV_Public.datalist[i].scale_E = float.Parse(scale[0].Trim());
+								aAV_Public.datalist[i].scale_N = float.Parse(scale[0].Trim());
+								aAV_Public.datalist[i].scale_H = float.Parse(scale[0].Trim());
+							}else if (scale.Length==3){
+								aAV_Public.datalist[i].scale_E = float.Parse(scale[0].Trim());
+								aAV_Public.datalist[i].scale_N = float.Parse(scale[1].Trim());
+								aAV_Public.datalist[i].scale_H = float.Parse(scale[2].Trim());
+							}else{
+								errorstatus.GetComponent<Text>().text +="Error : "+dataProp[0]+"."+dataProp[1]+"= "+dataVal[1].Trim()+"\n";
+							}
+						}else if (dataProp[1].Trim() == "exist"){
+							string[] exist = dataVal[1].Trim().Trim('"').Split(',');
+							if(exist.Length>=2){
+								aAV_Public.datalist[i].end = exist[1].Trim();
+							}
+							if(exist.Length>=1){
+								aAV_Public.datalist[i].start = exist[0].Trim();
+							}
 						}else if (dataProp[1].Trim() == "visible"){
-							aAV_Public.datalist[i].visible = Convert.ToBoolean(dataVal[1].Trim());
+							aAV_Public.datalist[i].visible = Convert.ToBoolean(dataVal[1].Trim().Trim('"'));
+						}else if (dataProp[1].Trim() == "copyright"){
+							aAV_Public.datalist[i].copyright = dataVal[1].Trim().Trim('"').Normalize();
 						}else{
 							errorstatus.GetComponent<Text>().text +="Error : "+dataProp[0]+"."+dataProp[1]+"= "+dataVal[1].Trim()+"\n";
 						}
 					}
 				}
+			}
+		}
+	}
+	
+	private void CheckRequire(){		//必須項目の確認
+		if((aAV_Public.basicInfo.type != "WG")&&(aAV_Public.basicInfo.type != "JP")&&(aAV_Public.basicInfo.type != "UT")){
+			errorstatus.GetComponent<Text>().text +="Error : 'type' setting not found.\n";
+		}
+		if((aAV_Public.basicInfo.center_E == 0d)&&(aAV_Public.basicInfo.center_N == 0d)&&(aAV_Public.basicInfo.center_H == 0f)){
+			errorstatus.GetComponent<Text>().text +="Error : 'center' setting not found.\n";
+		}
+		if(File.Exists(aAV_Public.basicInfo.filedir+"terrain/terrain00.raw")&&(aAV_Public.basicInfo.area==0f)){
+			errorstatus.GetComponent<Text>().text +="Error : 'mesh' setting not found.\n";
+		}
+		for(int i = 0 ; i < aAV_Public.rplist.Count; i++){
+			if((aAV_Public.rplist[i].origin_E == 0d)&&(aAV_Public.rplist[i].origin_N == 0d)&&(aAV_Public.rplist[i].origin_H == 0f)){
+				errorstatus.GetComponent<Text>().text +="Error : 'marker["+(i+1)+"].origin' setting not found.\n";
+			}
+		}
+		for(int i = 0 ; i < aAV_Public.linelist.Count; i++){
+			if((aAV_Public.linelist[i].start_marker == 0)){
+				errorstatus.GetComponent<Text>().text +="Error : 'line["+(i+1)+"].start_marker' setting not found.\n";
+			}
+		}
+		for(int i = 0 ; i < aAV_Public.datalist.Count; i++){
+			if((aAV_Public.datalist[i].file == "")){
+				errorstatus.GetComponent<Text>().text +="Error : 'dataset["+(i+1)+"].file' setting not found.\n";
+			}
+			if((aAV_Public.datalist[i].origin_E == 0d)&&(aAV_Public.datalist[i].origin_N == 0d)&&(aAV_Public.datalist[i].origin_H == 0f)){
+				errorstatus.GetComponent<Text>().text +="Error : 'dataset["+(i+1)+"].origin' setting not found.\n";
 			}
 		}
 	}
@@ -404,13 +522,15 @@ public class aAV_FileSet : MonoBehaviour {
 					aav_public.InnerAvatar = assetLoaderContext.RootGameObject;
 					assetLoaderContext.RootGameObject.transform.SetParent(avatar.transform, false);
 					
-					//Avatarのサイズを調整
-					var bounds = assetLoaderContext.RootGameObject.CalculateBounds();
-					var factor = avatar.GetComponent<CapsuleCollider>().height / bounds.size.y;
-					avatar.transform.localScale = factor * Vector3.one;
+					//Avatarのサイズを調整（基本身長は176cm、視位置は165.4cm）
+					if(aAV_Public.basicInfo.avatar_H == 0f){
+						var bounds = assetLoaderContext.RootGameObject.CalculateBounds();
+						aAV_Public.basicInfo.avatar_H = bounds.size.y*100;
+					}
 					
 					//Animatorに読み込んだAvatarをセット
 					avatar.GetComponent<Animator>().avatar = assetLoaderContext.RootGameObject.GetComponent<Animator>().avatar;
+					
 				}
 			}, null, null, null, assetLoaderOptions, null);
 		}
@@ -444,20 +564,20 @@ public class aAV_FileSet : MonoBehaviour {
 //		assetLoaderOptions.KeepQuads = false;									//false：DX11用
 //		assetLoaderOptions.ImportNormals = true;								//true：メッシュノーマルをインポート
 //		assetLoaderOptions.SmoothingAngle = 60f;								//60f：スムージング角度
-//		assetLoaderOptions.ImportBlendShapeNormals = false;			//false; メッシュブレンドシェイプノーマルをインポート
-//		assetLoaderOptions.CalculateBlendShapeNormals = false;		//false：メッシュブレンドシェイプのノーマルを計算
-//		assetLoaderOptions.ImportTangents = false;								//false：メッシュタンジェントをインポート
+//		assetLoaderOptions.ImportBlendShapeNormals = true;			//false; メッシュブレンドシェイプノーマルをインポート
+//		assetLoaderOptions.CalculateBlendShapeNormals = true;		//false：メッシュブレンドシェイプのノーマルを計算
+//		assetLoaderOptions.ImportTangents = true;								//false：メッシュタンジェントをインポート
 //		assetLoaderOptions.SwapUVs= false;										//false：メッシュUVを交換
 //		assetLoaderOptions.ImportMaterials = true;								//true：falseにするとテクスチャ消滅。必須。
 //		assetLoaderOptions.AddSecondAlphaMaterial = false;				//false：半不透明/半透明マテリアル。非推奨
-//		assetLoaderOptions.ImportTextures = false;								//true：テクスチャをインポート。必須。
+//		assetLoaderOptions.ImportTextures = true;								//true：テクスチャをインポート。必須。
 //		assetLoaderOptions.Enforce16BitsTextures = false;					//false：テクスチャを16ビットHDRとしてインポート。非推奨
 //		assetLoaderOptions.ScanForAlphaPixels = false;						//true：アルファブレンドピクセルをスキャンし、透明なマテリアルを生成
 //		assetLoaderOptions.UseAlphaMaterials = false;						//false：アルファ(透明)マテリアル。非推奨
 //		assetLoaderOptions.DoubleSidedMaterials = false;					//false：両面マテリアル
 //		assetLoaderOptions.TextureCompressionQuality = TextureCompressionQuality.Normal;	//TextureCompressionQuality.Normal：テクスチャ圧縮
-//		assetLoaderOptions.GenerateMipmaps = false;							//true：テクスチャのミップマップ生成。高速化に寄与
-//		assetLoaderOptions.FixNormalMaps = false;								//false：マップチャンネルの順序をRGBAではなくABBRに変更
+//		assetLoaderOptions.GenerateMipmaps = true;							//true：テクスチャのミップマップ生成。高速化に寄与
+//		assetLoaderOptions.FixNormalMaps = true;								//false：マップチャンネルの順序をRGBAではなくABBRに変更
 //		assetLoaderOptions.AnimationType = AnimationType.Legacy;	//AnimationType.Legacy：モデルリギングタイプ
 //		assetLoaderOptions.SampleBindPose = false;							//false：バインドポーズにサンプリング
 //		assetLoaderOptions.EnforceTPose = true;									//true：Tポーズに強制
@@ -489,7 +609,16 @@ public class aAV_FileSet : MonoBehaviour {
 //		assetLoaderOptions.ImportLights = false;									//false：ライトのインポートを有効
 //		assetLoaderOptions.DisableObjectsRenaming = false;				//false：オブジェクトの名前変更を無効
 		if(obj_count < aAV_Public.datalist.Count){
-			AssetLoader.LoadModelFromFile(aAV_Public.basicInfo.filedir+"object/"+aAV_Public.datalist[obj_count].file, OnLoad, OnMaterialsLoad, OnProgress, OnError, null, assetLoaderOptions);
+			if(aAV_Public.datalist[obj_count].file == "water"){
+				//Waterをprefabから作成
+				GameObject water = Instantiate(aav_public.waterPrefab) as GameObject;
+				aAV_Public.datalist[obj_count].gameobject = water;
+				SetObject(obj_count);
+				obj_count += 1;
+				AssetLoad();
+			}else{
+				AssetLoader.LoadModelFromFile(aAV_Public.basicInfo.filedir+"object/"+aAV_Public.datalist[obj_count].file, OnLoad, OnMaterialsLoad, OnProgress, OnError, null, assetLoaderOptions);
+			}
 		}
 	}
 	
@@ -504,7 +633,7 @@ public class aAV_FileSet : MonoBehaviour {
 		GameObject.Find("load_object").GetComponent<Text>().text = "Object  loading："+ aAV_Public.datalist[obj_count].name+" (100%)";
 
 		//読み込んだ3Dの最上位GameObjectを取得
-		var myGameObject = assetLoaderContext.RootGameObject;
+		GameObject myGameObject = assetLoaderContext.RootGameObject;
 		
 		//読み込んだ3Dのdatalist番号を取得し、GameObjectを記録
 		int n =0;
@@ -515,7 +644,14 @@ public class aAV_FileSet : MonoBehaviour {
 		}
 		aAV_Public.datalist[n].gameobject = myGameObject;
 		SetObject(n);
-		
+
+		//MeshRendererのあるgameObjectに、著作権表示スクリプトを追加
+		for (int i = 0; i < myGameObject.transform.childCount; i++)
+		{
+			if(myGameObject.transform.GetChild(i).gameObject.GetComponent<MeshRenderer>() != null){
+				myGameObject.transform.GetChild(i).gameObject.AddComponent<aAV_Copyright>();
+			}
+		}
 
 		//時系列フラグによる表示コントロール
 		bool timeVisible = true;
@@ -580,9 +716,9 @@ public class aAV_FileSet : MonoBehaviour {
 		
 		//3Dのスケールを調整
 		Vector3 localScale = myTransform.localScale;
-		localScale.x = aAV_Public.datalist[n].scale; 
-		localScale.y = localScale.x; 
-		localScale.z = localScale.x;
+		localScale.x = aAV_Public.datalist[n].scale_E; 
+		localScale.y = aAV_Public.datalist[n].scale_H; 
+		localScale.z = aAV_Public.datalist[n].scale_N; 
 		myTransform.localScale = localScale; // スケールを設定
 
 		Debug.Log(aAV_Public.datalist[n].name+"：標高降下="+down[0].ToString()+", E方向傾き="+down[1].ToString()+", N方向傾き="+down[2].ToString());
@@ -619,12 +755,12 @@ public class aAV_FileSet : MonoBehaviour {
 				//rawファイルの読み込み
 				TerrainData terrainData = new TerrainData();
 				terrainData.heightmapResolution = heightmapRes;
-				terrainData.alphamapResolution = terrainResolution;
 				terrainData.baseMapResolution = terrainResolution;
 				GameObject terrainObj = Terrain.CreateTerrainGameObject(terrainData);
 				terrain =terrainObj.GetComponent<Terrain>();
-				terrain.materialTemplate = terrainMaterial;
 				terrainObj.name = terrainName;
+				terrainObj.AddComponent<MeshRenderer>();
+				terrainObj.AddComponent<aAV_Copyright>();
 				using (BinaryReader br = new BinaryReader(File.Open(rawName, FileMode.Open, FileAccess.Read)))
 				{
 					byte[] rawdata;
@@ -680,6 +816,8 @@ public class aAV_FileSet : MonoBehaviour {
 							TerrainLayer[] tlayers = new TerrainLayer[1];
 							tlayers[0] = new TerrainLayer();
 							tlayers[0].diffuseTexture = tex;
+							tlayers[0].metallic = 0f;
+							tlayers[0].smoothness = 0f;
 							tlayers[0].tileOffset = new Vector2();
 							if(terrainName == "terrain00"){
 								//terrain00のテクスチャ タイリングサイズ調整
@@ -696,6 +834,7 @@ public class aAV_FileSet : MonoBehaviour {
 						//Terrain読み込み終了カウント
 						terrain_count += 1;
 					}
+					
 					loading.text = "Terrain loading："+ terrainName +" (100%)";
 					yield return null;
 				}
@@ -720,7 +859,7 @@ public class aAV_FileSet : MonoBehaviour {
 	public void startMain(){
 		//タイトルとロードメッセージ画面を消し、Menuをアクティブにする。
 		GameObject.Find("Main").transform.Find("Menu").gameObject.SetActive(true);
-		GameObject.Find("XR Origin").transform.Find("Camera Offset/MainCamera").gameObject.SetActive(true);
+		GameObject.Find("XR Origin").transform.Find("Camera Offset/Main Camera").gameObject.SetActive(true);
 		
 		//観測者高度をcenterに設定
 		avatar.SetActive(true);

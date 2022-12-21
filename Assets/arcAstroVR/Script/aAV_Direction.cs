@@ -34,6 +34,7 @@ public class aAV_Direction : MonoBehaviour
 	private GameObject markerEdit;
 	private GameObject objectEdit;
 	private GameObject lineEdit;
+	private GameObject xrRighthand;	
 	private Text message;
 	private Text positionText;
 	private Text cursorText;
@@ -72,6 +73,7 @@ public class aAV_Direction : MonoBehaviour
 		positionText = mainTrans.Find("Menu/TopBar/positionInfo").gameObject.GetComponent<Text> ();
 		cursorText = mainTrans.Find("Menu/TopBar/cursorInfo").gameObject.GetComponent<Text> ();
 		showText = mainTrans.Find("Menu/TopBar/showButton/Text").gameObject.GetComponent<Text> ();
+		xrRighthand = GameObject.Find("Camera Offset").transform.Find("RightHand Controller").gameObject;
 	}
 	
 	void Start()
@@ -93,13 +95,13 @@ public class aAV_Direction : MonoBehaviour
 	}
 
 	public void ViewSizeInitialize(){
-		int heightsize = (aAV_Public.rplist.Count+aAV_Public.linelist.Count+aAV_Public.datalist.Count)*30+10+30+10+30+10+30+10;
+		int heightsize = 10+(12+10)*3+(aAV_Public.rplist.Count+aAV_Public.linelist.Count+aAV_Public.datalist.Count)*12;
 		var infosize = infoview.GetComponent<RectTransform>().sizeDelta;
-		if( heightsize > 500){
-			heightsize = 500;
+		if( heightsize > 300){
+			heightsize = 300;
 		}
 		scrollview.GetComponent<RectTransform>().sizeDelta = new Vector2(infosize.x, heightsize);
-		infoview.GetComponent<RectTransform>().sizeDelta = new Vector2(infosize.x, heightsize +30);
+		infoview.GetComponent<RectTransform>().sizeDelta = new Vector2(infosize.x, heightsize +14);
 	}
 	
 	public void ViewUpdate(){
@@ -121,6 +123,7 @@ public class aAV_Direction : MonoBehaviour
 
 			//マーカーのGameObjectをprehubから作成
 			aAV_Public.rplist[i].infoobject = (GameObject)Instantiate(rpPrefab, transform.position, Quaternion.identity, parent);
+			aAV_Public.rplist[i].infoobject.GetComponent<RectTransform>().localRotation = Quaternion.Euler(0,0,0);
 			aAV_Public.rplist[i].infoobject.GetComponent<aAV_InfoAction> ().ListNo=i;
 
 			//マーカーの表示ON/OFFをセット
@@ -159,6 +162,7 @@ public class aAV_Direction : MonoBehaviour
 		for(int i = 0 ; i < aAV_Public.linelist.Count; i++){
 			//補助線のGameObjectをprehubから作成
 			aAV_Public.linelist[i].infoobject = (GameObject)Instantiate(lnPrefab, transform.position, Quaternion.identity, parent);
+			aAV_Public.linelist[i].infoobject.GetComponent<RectTransform>().localRotation = Quaternion.Euler(0,0,0);
 			aAV_Public.linelist[i].infoobject.GetComponent<aAV_InfoAction> ().ListNo=i;
 
 			//補助線の表示ON/OFFをセット
@@ -190,6 +194,14 @@ public class aAV_Direction : MonoBehaviour
 				e_text = "Angle : "+aAV_Public.linelist[i].angle;
 			}
 			line_marker.text = s_text +" - " + e_text;
+			
+			//XR時にMapボタンを非インタラクティブにする。
+			if(xrRighthand.activeSelf){
+				aAV_Public.linelist[i].infoobject.transform.Find("MapButton").gameObject.GetComponent<Button>().interactable = false;
+			}else{
+				aAV_Public.linelist[i].infoobject.transform.Find("MapButton").gameObject.GetComponent<Button>().interactable = true;
+			}
+
 		}
 
 		//InfoView：オブジェクトの初期設定
@@ -201,6 +213,7 @@ public class aAV_Direction : MonoBehaviour
 		for(int i = 0 ; i < aAV_Public.datalist.Count; i++){
 			//オブジェクトのGameObjectをprehubから作成
 			aAV_Public.datalist[i].infoobject = (GameObject)Instantiate(obPrefab, transform.position, Quaternion.identity, parent);
+			aAV_Public.datalist[i].infoobject.GetComponent<RectTransform>().localRotation = Quaternion.Euler(0,0,0);
 			aAV_Public.datalist[i].infoobject.GetComponent<aAV_InfoAction> ().ListNo=i;
 
 			//オブジェクトの表示ON/OFFをセット
@@ -239,13 +252,8 @@ public class aAV_Direction : MonoBehaviour
 			}else{
 				exist = "All";
 			}
-			info_scale.text = aAV_Public.lang.scale+" : "+aAV_Public.datalist[i].scale.ToString("F2")+"   "+aAV_Public.lang.existences+" :"+exist;
+			info_scale.text = aAV_Public.lang.scale+" : "+aAV_Public.datalist[i].scale_E.ToString("F2")+", "+aAV_Public.datalist[i].scale_N.ToString("F2")+", "+aAV_Public.datalist[i].scale_H.ToString("F2")+"   "+aAV_Public.lang.existences+" :"+exist;
 		}
-
-		//レイアウト計算が崩れる時があるので、強制再計算描画
-//		Canvas.ForceUpdateCanvases();
-//		infoview.SetActive(false);
-//		infoview.SetActive(true);
 	}
 
 	//リアルタイム更新情報
@@ -304,22 +312,22 @@ public class aAV_Direction : MonoBehaviour
 		var result = Regex.Replace(positionText.text, "[^0-9\\:\\.\\,\\+\\-]", "").Split(del);
 		if(aAV_Public.center.type == "WG"){
 			text += "WGS84";
-			text += "\t\tLongitude(°)\tLatitude(°)\tEl height(m)\n";
+			text += "\t\t"+aAV_Public.lang.lon+"(°)\t"+aAV_Public.lang.lat+"(°)\t "+aAV_Public.lang.height+"(m)\n";
 		}else if(aAV_Public.center.type == "UT"){
 			text += "UTM zone"+result[0];
-			text += "\t\tEast(m)\tNorth(m)\tEl height(m)\n";
+			text += "\t\t"+aAV_Public.lang.xdirection+"(m)\t"+aAV_Public.lang.ydirection+"(m)\t"+aAV_Public.lang.zdirection+"(m)\n";
 		}else if(aAV_Public.center.type == "JP"){
 			text += "Japan PRCS zone"+result[0];
-			text += "\t\tEast(m)\tNorth(m)\tEl height(m)\n";
+			text += "\t\t"+aAV_Public.lang.xdirection+"(m)\t"+aAV_Public.lang.ydirection+"(m)\t"+aAV_Public.lang.zdirection+"(m)\n";
 		}
 		text += "Observation position\t\t"+result[1]+"\t"+result[2]+"\t"+result[3]+"\n";
 
 		//Maker
 		text += "\nMarker\n";
 		if(aAV_Public.center.type == "WG"){
-			text += "Name\tNo.\tLongitude(°)\tLatitude(°)\tEl height(m)\tAzimuth(°)\tAltitude(°)\tDistance(m)\n";
+			text += "Name\tNo.\t"+aAV_Public.lang.lon+"(°)\t"+aAV_Public.lang.lat+"(°)\t "+aAV_Public.lang.height+"(m)\t"+aAV_Public.lang.azimuth+"(°)\t"+aAV_Public.lang.altitude+"(°)\t"+aAV_Public.lang.distance+"(m)\n";
 		}else{
-			text += "Name\tNo.\tEast(m)\tNorth(m)\tEl height(m)\tAzimuth(°)\tAltitude(°)\tDistance(m)\n";
+			text += "Name\tNo.\t"+aAV_Public.lang.xdirection+"(m)\t"+aAV_Public.lang.ydirection+"(m)\t"+aAV_Public.lang.zdirection+"(m)\t"+aAV_Public.lang.azimuth+"(°)\t"+aAV_Public.lang.altitude+"(°)\t"+aAV_Public.lang.distance+"(m)\n";
 		}
 		for(int i = 0 ; i < aAV_Public.rplist.Count; i++){
 			text += aAV_Public.rplist[i].name + "\t" + (i+1)+"\t";
@@ -348,7 +356,7 @@ public class aAV_Direction : MonoBehaviour
 			text += (radian*toDeg).ToString()+"\t"+(Math.Asin(direction.y/r)*toDeg).ToString()+"\t"+r+"\n";
 		}
 
-	//Auxiliary line
+		//Auxiliary line
 		text += "\nAuxiliary line\n";
 		text += "Name\tNo.\tStart\tEnd\tAngle(°)\n";
 		for(int i = 0 ; i < aAV_Public.linelist.Count; i++){
@@ -379,11 +387,11 @@ public class aAV_Direction : MonoBehaviour
 		}
 	
 		//Object
-		text += "\nObject\t\tOrigin\t\t\tRotation\n";
+		text += "\nObject\t\tOrigin\t\t\tRotation\t\t\tScale\n";
 		if(aAV_Public.center.type == "WG"){
-			text += "Name\tNo.\tLongitude(°)\tLatitude(°)\tEl height(m)\tE-Axis(°)\tN-Axis(°)\tH-Axis(°)\tScale(mag.)\tExistences\n";
+			text += "Name\tNo.\t"+aAV_Public.lang.lon+"(°)\t"+aAV_Public.lang.lat+"(°)\t "+aAV_Public.lang.height+"(m)\t"+aAV_Public.lang.xaxis+"(°)\t"+aAV_Public.lang.yaxis+"(°)\t"+aAV_Public.lang.zaxis+"(°)\t"+aAV_Public.lang.xaxis+"(mag.)\t"+aAV_Public.lang.yaxis+"(mag.)\t"+aAV_Public.lang.zaxis+"(mag.)\t"+aAV_Public.lang.existences+"\n";
 		}else{
-			text += "Name\tNo.\tEast(m)\tNorth(m)\tEl height(m)\tE-Axis(°)\tN-Axis(°)\tH-Axis(°)\tScale(mag.)\tExistences\n";
+			text += "Name\tNo.\t"+aAV_Public.lang.xdirection+"(m)\t"+aAV_Public.lang.ydirection+"(m)\t"+aAV_Public.lang.zdirection+"(m)\t"+aAV_Public.lang.xaxis+"(°)\t"+aAV_Public.lang.yaxis+"(°)\t"+aAV_Public.lang.zaxis+"(°)\t"+aAV_Public.lang.xaxis+"(mag.)\t"+aAV_Public.lang.yaxis+"(mag.)\t"+aAV_Public.lang.zaxis+"(mag.)\t"+aAV_Public.lang.existences+"\n";
 		}
 		for(int i = 0 ; i < aAV_Public.datalist.Count; i++){
 			text += aAV_Public.datalist[i].name+"\t"+(i+1)+"\t";
@@ -411,7 +419,7 @@ public class aAV_Direction : MonoBehaviour
 			}else{
 				exist = "All";
 			}
-			text += aAV_Public.datalist[i].scale.ToString("F6")+"\t"+exist+"\n";
+			text += aAV_Public.datalist[i].scale_E.ToString("F6")+"\t"+aAV_Public.datalist[i].scale_N.ToString("F6")+"\t"+aAV_Public.datalist[i].scale_H.ToString("F6")+"\t"+exist+"\n";
 		}
 		
 		GUIUtility.systemCopyBuffer = text;
@@ -440,7 +448,9 @@ public class aAV_Direction : MonoBehaviour
 			aAV_Public.datalist[n].rot_E = 0f;
 			aAV_Public.datalist[n].rot_N = 0f;
 			aAV_Public.datalist[n].rot_H = 0f;
-			aAV_Public.datalist[n].scale = 1f;
+			aAV_Public.datalist[n].scale_E = 1f;
+			aAV_Public.datalist[n].scale_N = 1f;
+			aAV_Public.datalist[n].scale_H = 1f;
 			aAV_Public.datalist[n].start = "";
 			aAV_Public.datalist[n].end = "";
 			aAV_Public.datalist[n].visible = true;
@@ -522,62 +532,77 @@ public class aAV_Direction : MonoBehaviour
 		var path = StandaloneFileBrowser.SaveFilePanel( "Save File", Path.GetDirectoryName(aAV_Public.basicInfo.filePath), "NewDataset", extensionList ).Name;
 		if(path != ""){
 			string savetext = "##############################################################\n";
-			savetext += "#Basic Setting / 基本設定 (Required : type, center, height)\n";
-			savetext += "#注：2バイトコード表記はStellariumでエラーを起こすので英語表記をすること\n";
-			savetext += "#typeには空間座標系を（WGS84または、JP01〜JP19、UTM01〜UTM60で）指定\n";
-			savetext += "#centerには中心座標を（WGS84は経度,緯度、19系はY,X、UTMはX,Yの順で）指定\n";
-			savetext += "#meshには詳細地形のメッシュ解像度(m)を指定\n";
+			savetext += "#Basic Setting (Required : type, center, mesh(If there is Narrow-Terrain))\n";
+			savetext += "#'type' is the coordinate system (WGS84 or JP01-JP19 or UTM01-UTM60).\n";
+			savetext += "#'center' is the the center coordinates (longitude,latitude,height for WGS84, Y,X,height for JP19, E,N,height for UTM).\n";
+			savetext += "#'mesh' is the mesh resolution (m) of Narrow-Terrain\n";
 			savetext += "##############################################################\n";
-			savetext += "location = "+aAV_Public.basicInfo.location+"\n";
-			savetext += "country = "+aAV_Public.basicInfo.country+"\n";
+			savetext += "location = \""+aAV_Public.basicInfo.location+"\"\n";
+			savetext += "country = \""+aAV_Public.basicInfo.country+"\"\n";
 			savetext += "timezone = "+aAV_Public.basicInfo.timezone+"\n";
 			savetext += "date = "+aAV_Public.basicInfo.year+"/"+string.Format("{0:D2}", aAV_Public.basicInfo.month)+"/"+string.Format("{0:D2}", aAV_Public.basicInfo.day)+"\n";
 			savetext += "time = "+string.Format("{0:D2}", aAV_Public.basicInfo.hour)+":"+string.Format("{0:D2}", aAV_Public.basicInfo.minute)+":"+string.Format("{0:D2}", aAV_Public.basicInfo.second)+"\n";
 			savetext += "mesh = "+(aAV_Public.basicInfo.area/4096)+"\n";
 			if(aAV_Public.center.type == "WG"){
 				savetext += "type = WGS84\n";
-				savetext += "center = "+aAV_Public.center.WGS_E+","+aAV_Public.center.WGS_N+"\n";
+				savetext += "center = "+aAV_Public.center.WGS_E+","+aAV_Public.center.WGS_N+","+aAV_Public.basicInfo.center_H+"\n";
 			}else if(aAV_Public.center.type == "JP"){
 				savetext += "type = JP"+string.Format("{0:D2}", aAV_Public.center.JPRCS_zone)+"\n";
-				savetext += "center = "+aAV_Public.center.JPRCS_E+","+aAV_Public.center.JPRCS_N+"\n";
+				savetext += "center = "+aAV_Public.center.JPRCS_E+","+aAV_Public.center.JPRCS_N+","+aAV_Public.basicInfo.center_H+"\n";
 			}else if(aAV_Public.center.type == "UT"){
 				savetext += "type = UTM"+string.Format("{0:D2}", aAV_Public.center.UTM_zone)+"\n";
-				savetext += "center = "+aAV_Public.center.UTM_E+","+aAV_Public.center.UTM_N+"\n";
+				savetext += "center = "+aAV_Public.center.UTM_E+","+aAV_Public.center.UTM_N+","+aAV_Public.basicInfo.center_H+"\n";
 			}
-			savetext += "height = "+aAV_Public.basicInfo.center_H+"\n";
-			savetext += "avatar = "+aAV_Public.basicInfo.avatar+"\n\n";
-	
+			if(aAV_Public.basicInfo.avatar !=""){
+				savetext += "avatar = "+aAV_Public.basicInfo.avatar+"\n";
+			}
+			if(aAV_Public.basicInfo.avatar_H != 176f){
+				savetext += "avatar_height = "+aAV_Public.basicInfo.avatar_H+"\n";
+			}
+			if((aAV_Public.basicInfo.copyright_W != "")||(aAV_Public.basicInfo.copyright_N !="")){
+				savetext += "copyright = \""+aAV_Public.basicInfo.copyright_W+"\",\""+aAV_Public.basicInfo.copyright_N+"\"\n";
+			}
+			savetext += "\n";
+			
 			savetext += "##############################################################\n";
-			savetext += "#Marker / マーカー (Required : marker[].origin, marker[].height)\n";
+			savetext += "#Marker (Required : marker[].origin)\n";
 			savetext += "##############################################################\n";
 			for(int i=0; i<aAV_Public.rplist.Count; i++){
-				savetext += "marker["+(i+1)+"].name = "+aAV_Public.rplist[i].name+"\n";
+				savetext += "marker["+(i+1)+"].name = \""+aAV_Public.rplist[i].name+"\"\n";
 				if(aAV_Public.center.type=="WG"){
 					XY = gis.EN2LonLat(aAV_Public.rplist[i].origin_E, aAV_Public.rplist[i].origin_N, aAV_Public.center.WGS_E, aAV_Public.center.WGS_N, 1d);
-					savetext += "marker["+(i+1)+"].origin = "+XY[0]+","+XY[1]+"\n";
+					savetext += "marker["+(i+1)+"].origin = "+XY[0]+","+XY[1]+","+aAV_Public.rplist[i].origin_H+"\n";
 				}else if(aAV_Public.center.type=="JP"){
 					XY[0]=aAV_Public.rplist[i].origin_E+aAV_Public.center.JPRCS_E;
 					XY[1]=aAV_Public.rplist[i].origin_N+aAV_Public.center.JPRCS_N;
-					savetext += "marker["+(i+1)+"].origin = "+XY[0]+","+XY[1]+"\n";
+					savetext += "marker["+(i+1)+"].origin = "+XY[0]+","+XY[1]+","+aAV_Public.rplist[i].origin_H+"\n";
 				}else if(aAV_Public.center.type=="UT"){
 					XY[0]=aAV_Public.rplist[i].origin_E+aAV_Public.center.UTM_E;
 					XY[1]=aAV_Public.rplist[i].origin_N+aAV_Public.center.UTM_N;
-					savetext += "marker["+(i+1)+"].origin = "+XY[0]+","+XY[1]+"\n";
+					savetext += "marker["+(i+1)+"].origin = "+XY[0]+","+XY[1]+","+aAV_Public.rplist[i].origin_H+"\n";
 				}
-				savetext += "marker["+(i+1)+"].height = "+aAV_Public.rplist[i].origin_H+"\n";
-				savetext += "marker["+(i+1)+"].color = "+aAV_Public.rplist[i].color+"\n";
-				savetext += "marker["+(i+1)+"].visible = "+aAV_Public.rplist[i].visible+"\n\n";
+				if(aAV_Public.rplist[i].color !=""){
+					savetext += "marker["+(i+1)+"].color = "+aAV_Public.rplist[i].color+"\n";
+				}
+				savetext += "marker["+(i+1)+"].visible = "+aAV_Public.rplist[i].visible+"\n";
+				if(aAV_Public.rplist[i].cam_ROLL !=0f || aAV_Public.rplist[i].cam_PITCH !=0f || aAV_Public.rplist[i].cam_YAW !=0f){
+					savetext += "marker["+(i+1)+"].cam_rotation = "+aAV_Public.rplist[i].cam_YAW+","+aAV_Public.rplist[i].cam_PITCH +","+aAV_Public.rplist[i].cam_ROLL+"\n";
+				}
+				if(aAV_Public.rplist[i].cam_FOV != 60f){
+					savetext += "marker["+(i+1)+"].cam_fov = "+aAV_Public.rplist[i].cam_FOV+"\n";
+				}
+				savetext += "\n";
 			}
 			
 			savetext += "##############################################################\n";
-			savetext += "#Auxiliary line / 補助線 (Required : line[].start_marker)\n";
+			savetext += "#Auxiliary line (Required : line[].marker)\n";
 			savetext += "##############################################################\n";
 			for(int i=0; i<aAV_Public.linelist.Count; i++){
-				savetext += "line["+(i+1)+"].name = "+aAV_Public.linelist[i].name+"\n";
+				savetext += "line["+(i+1)+"].name = \""+aAV_Public.linelist[i].name+"\"\n";
 				if((bool)aAV_Public.linelist[i].startObj){
 					for(int n = 0; n<aAV_Public.rplist.Count; n++){
 						if(aAV_Public.rplist[n].gameobject == aAV_Public.linelist[i].startObj){
-							savetext += "line["+(i+1)+"].start_marker = "+(n+1).ToString()+"\n";
+							savetext += "line["+(i+1)+"].marker = "+(n+1).ToString()+",";
 						}
 					}
 				}else{
@@ -586,42 +611,53 @@ public class aAV_Direction : MonoBehaviour
 				if((bool)aAV_Public.linelist[i].endObj){
 					for(int n = 0; n<aAV_Public.rplist.Count; n++){
 						if(aAV_Public.rplist[n].gameobject == aAV_Public.linelist[i].endObj){
-							savetext += "line["+(i+1)+"].end_marker = "+(n+1).ToString()+"\n";
+							savetext += (n+1).ToString()+"\n";
 						}
 					}
 				}else{
-					savetext += "line["+(i+1)+"].end_marker = \n";
+					savetext += "\n";
 				}
 				savetext += "line["+(i+1)+"].angle = "+aAV_Public.linelist[i].angle+"\n";
-				savetext += "line["+(i+1)+"].color = "+aAV_Public.linelist[i].color+"\n";
+				if(aAV_Public.linelist[i].color !=""){
+					savetext += "line["+(i+1)+"].color = "+aAV_Public.linelist[i].color+"\n";
+				}
 				savetext += "line["+(i+1)+"].visible = "+aAV_Public.linelist[i].visible+"\n\n";
 			}
 			
 			savetext += "##############################################################\n";
-			savetext += "#3D Object (required : dataset[].file, dataset[].origin, dataset[].height)\n";
+			savetext += "#3D Object (required : dataset[].file, dataset[].origin)\n";
 			savetext += "##############################################################\n";
 			for(int i=0; i<aAV_Public.datalist.Count; i++){
-				savetext += "dataset["+(i+1)+"].name = "+aAV_Public.datalist[i].name+"\n";
+				savetext += "dataset["+(i+1)+"].name = \""+aAV_Public.datalist[i].name+"\"\n";
 				savetext += "dataset["+(i+1)+"].file = "+aAV_Public.datalist[i].file+"\n";
 				if(aAV_Public.center.type=="WG"){
 					XY = gis.EN2LonLat(aAV_Public.datalist[i].origin_E, aAV_Public.datalist[i].origin_N, aAV_Public.center.WGS_E, aAV_Public.center.WGS_N, 1d);
-					savetext += "dataset["+(i+1)+"].origin = "+XY[0]+","+XY[1]+"\n";
+					savetext += "dataset["+(i+1)+"].origin = "+XY[0]+","+XY[1]+","+aAV_Public.datalist[i].origin_H+"\n";
 				}else if(aAV_Public.center.type=="JP"){
 					XY[0]=aAV_Public.datalist[i].origin_E+aAV_Public.center.JPRCS_E;
 					XY[1]=aAV_Public.datalist[i].origin_N+aAV_Public.center.JPRCS_N;
-					savetext += "dataset["+(i+1)+"].origin = "+XY[0]+","+XY[1]+"\n";
+					savetext += "dataset["+(i+1)+"].origin = "+XY[0]+","+XY[1]+","+aAV_Public.datalist[i].origin_H+"\n";
 				}else if(aAV_Public.center.type=="UT"){
 					XY[0]=aAV_Public.datalist[i].origin_E+aAV_Public.center.UTM_E;
 					XY[1]=aAV_Public.datalist[i].origin_N+aAV_Public.center.UTM_N;
-					savetext += "dataset["+(i+1)+"].origin = "+XY[0]+","+XY[1]+"\n";
+					savetext += "dataset["+(i+1)+"].origin = "+XY[0]+","+XY[1]+","+aAV_Public.datalist[i].origin_H+"\n";
 				}
-				savetext += "dataset["+(i+1)+"].height = "+aAV_Public.datalist[i].origin_H+"\n";
-				savetext += "dataset["+(i+1)+"].rot_E = "+aAV_Public.datalist[i].rot_E+"\n";
-				savetext += "dataset["+(i+1)+"].rot_N = "+aAV_Public.datalist[i].rot_N+"\n";
-				savetext += "dataset["+(i+1)+"].rot_H = "+aAV_Public.datalist[i].rot_H+"\n";
-				savetext += "dataset["+(i+1)+"].scale = "+aAV_Public.datalist[i].scale+"\n";
-				savetext += "dataset["+(i+1)+"].start = "+aAV_Public.datalist[i].start+"\n";
-				savetext += "dataset["+(i+1)+"].end = "+aAV_Public.datalist[i].end+"\n";
+				if((aAV_Public.datalist[i].rot_E == 0f)&&(aAV_Public.datalist[i].rot_N == 0f)){
+					savetext += "dataset["+(i+1)+"].rotation = "+aAV_Public.datalist[i].rot_H+"\n";
+				}else{
+					savetext += "dataset["+(i+1)+"].rotation = "+aAV_Public.datalist[i].rot_E+","+aAV_Public.datalist[i].rot_N+","+aAV_Public.datalist[i].rot_H+"\n";
+				}
+				if((aAV_Public.datalist[i].scale_E == aAV_Public.datalist[i].scale_N)&&(aAV_Public.datalist[i].scale_N ==aAV_Public.datalist[i].scale_H)){
+					savetext += "dataset["+(i+1)+"].scale = "+aAV_Public.datalist[i].scale_H+"\n";
+				}else{
+					savetext += "dataset["+(i+1)+"].scale = "+aAV_Public.datalist[i].scale_E+","+aAV_Public.datalist[i].scale_N+","+aAV_Public.datalist[i].scale_H+"\n";
+				}
+				if((aAV_Public.datalist[i].start !="")||(aAV_Public.datalist[i].end !="")){
+					savetext += "dataset["+(i+1)+"].exist = "+aAV_Public.datalist[i].start+","+aAV_Public.datalist[i].end+"\n";
+				}
+				if(aAV_Public.datalist[i].copyright!=""){
+					savetext +="dataset["+(i+1)+"].copyright = \""+aAV_Public.datalist[i].copyright+"\"\n";
+				}
 				savetext += "dataset["+(i+1)+"].visible = "+aAV_Public.datalist[i].visible+"\n\n";
 			}
 			File.WriteAllText(path, savetext, Encoding.UTF8);

@@ -11,6 +11,8 @@ public class aAV_CompassMap : MonoBehaviour
 	private aAV_Public.RPoint centerMarker;
 	private LineRenderer lineRenderer;
 	private GameObject lineCanvas;
+	private GameObject mainCam;
+	private GameObject markerCam;
 	private GameObject mapCam;
 	private GameObject markerObj;
 	private GameObject closeButton;
@@ -21,6 +23,8 @@ public class aAV_CompassMap : MonoBehaviour
 	void Awake(){
 		aav_public = GameObject.Find("Main").GetComponent<aAV_Public>();
 		lineCanvas = GameObject.Find("Main").transform.Find("LineCanvas").gameObject;
+		mainCam = GameObject.Find("XR Origin/Camera Offset");
+		markerCam = GameObject.Find("Main").transform.Find("Menu/CamEdit").gameObject;
 		mapCam = GameObject.Find("Main").transform.Find("MapCamera").gameObject;
 		closeButton = GameObject.Find("Main").transform.Find("Menu/CloseCompass").gameObject;
 	}
@@ -40,6 +44,9 @@ public class aAV_CompassMap : MonoBehaviour
 	
 	public void ShowCompassMap(int i){
 		markerObj = aAV_Public.linelist[i].startObj;
+		if(markerCam.activeSelf){
+			markerCam.GetComponent<aAV_CamEdit>().OnCancel();
+		}
 		if(markerObj != null){
 			mapCam.SetActive(true);
 			closeButton.SetActive(true);

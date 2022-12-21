@@ -18,17 +18,13 @@ public class aAV_StelMouseZoom : MonoBehaviour {
     private float lastFoV=200; // keep track of this to avoid too much traffic.
     private aAV_StelController controller; // This finds the related script providing communication to Stellarium.
 	private GameObject mapCamObj;
+	private GameObject mainCamObj;
 
 	void Awake()
 	{
+		mainCamObj = GameObject.Find("XR Origin/Camera Offset/Main Camera").gameObject;
+		mapCamObj =  GameObject.Find("Main").transform.Find("MapCamera").gameObject;
 		controller = gameObject.GetComponent<aAV_StelController>();
-
-		var gameObjectList = Resources.FindObjectsOfTypeAll<GameObject>();
-		foreach (var obj in gameObjectList) {
-			if (obj.name == "MapCamera") {
-				mapCamObj = obj;
-			}
-		}
 	}
 
     void Start()
@@ -62,21 +58,16 @@ public class aAV_StelMouseZoom : MonoBehaviour {
         }
     }
     
-	public void ZoomIn(){
+	public void Zoom(){
 		if (!aAV_Public.showCompass){
-			Camera.main.fieldOfView = Mathf.Max(Camera.main.fieldOfView - stepOrFactor, minFieldOfView);
+			mainCamObj.GetComponent<Camera>().fieldOfView = Mathf.Clamp(mainCamObj.GetComponent<Camera>().fieldOfView + stepOrFactor, minFieldOfView, maxFieldOfView);
 		}else{
 			float scale = mapCamObj.GetComponent<Camera>().orthographicSize;
-			mapCamObj.GetComponent<Camera>().orthographicSize = Mathf.Max(scale / 1.2f, 1f);
-		}
-	}
-
-	public void ZoomOut(){
-		if (!aAV_Public.showCompass){
-			Camera.main.fieldOfView = Mathf.Min(Camera.main.fieldOfView + stepOrFactor, maxFieldOfView);
-		}else{
-			float scale = mapCamObj.GetComponent<Camera>().orthographicSize;
-			mapCamObj.GetComponent<Camera>().orthographicSize = Mathf.Min(scale * 1.2f, 150000f);
+			if(stepOrFactor>0){
+				mapCamObj.GetComponent<Camera>().orthographicSize = Mathf.Min(scale * 1.2f, 150000f);
+			}else{
+				mapCamObj.GetComponent<Camera>().orthographicSize = Mathf.Max(scale / 1.2f, 1f);
+			}
 		}
 	}
 }

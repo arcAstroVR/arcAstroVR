@@ -4,6 +4,8 @@ using UnityEngine;
 
 public class aAV_Lines : MonoBehaviour
 {
+	public float lineWidth = 0.1f;
+
 	public GameObject startMarker;
 	public GameObject endMarker;
 	public Vector3 endAngle = new Vector3(0f,0f,0f);
@@ -48,11 +50,11 @@ public class aAV_Lines : MonoBehaviour
 				if(!aAV_Public.showCompass){	//通常表示
 					//start側の線の太さ
 					lineRenderer.SetPosition(0, startPos);
-					lineRenderer.startWidth = 0.02f+scale;
+					lineRenderer.startWidth = lineWidth+scale;
 										
 					//end側の線の太さ
 					lineRenderer.SetPosition(1, endPos);
-					lineRenderer.endWidth = 0.02f+scale;
+					lineRenderer.endWidth = lineWidth+scale;
 				}else{	//コンパスマップ表示
 					scale = mapCamObj.GetComponent<Camera>().orthographicSize / 400f;
 					startPos = startMarker.transform.position;

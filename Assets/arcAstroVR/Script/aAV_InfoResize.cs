@@ -21,7 +21,7 @@ public class aAV_InfoResize : MonoBehaviour, IBeginDragHandler, IDragHandler, IE
 	public void OnDrag(PointerEventData e){
 		var infosize = info.GetComponent<RectTransform>().sizeDelta;
 		var logsize = log.GetComponent<RectTransform>().sizeDelta;
-		if( infosize.y - e.delta.y >100 && infosize.y - e.delta.y <= logsize.y +30){
+		if( infosize.y - e.delta.y >100 && infosize.y - e.delta.y <= logsize.y +14){
 			info.GetComponent<RectTransform>().sizeDelta -= new Vector2(0f, e.delta.y);
 			view.GetComponent<RectTransform>().sizeDelta -= new Vector2(0f, e.delta.y);
 		}
