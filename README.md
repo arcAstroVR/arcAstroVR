@@ -95,7 +95,11 @@ The arcAstroVR asset is programmed based on the Unity Asset "stellarium-unity" d
  * 3rd Person Controller + Fly Mode<br>Authors: Vinicius Marques<br>Contact: http://www.dcc.ufmg.br/~allonman/support<br>Version: 2.1.5<br>Licence: Unity Asset Store standard EULA  
  * JSON Object<br>Authors: Defective Studios<br>Contact: http://defectivestudios.com/company<br>Version: 2.1.2<br>Licence: Unity Asset Store standard EULA  
  * Dome Tools<br>Authors: At-Bristol<br>Contact: http://at-bristol.org.uk<br>Version: 1.1<br>Licence: Unity Asset Store standard EULA  
- * TriLib2<br>Authors: Ricardo Reis<br>Contact: https://ricardoreis.net<br>Version: 2.17a<br>Licence: Unity Asset Store standard EULA  
+ * TriLib2<br>Authors: Ricardo Reis<br>Contact: https://ricardoreis.net<br>Version: 2.18<br>Licence: Unity Asset Store standard EULA  
+ * Cesium for Unity<br>Authors: Cesium<br>Contact: https://cesium.com/platform/cesium-for-unity/<br>Version: 0.2.0<br>Licence: Apache License 2.0  
+ * URP Water<br>Authors: Yan Verde<br>Contact: https://www.yvgrafix.com<br>Version: 1.1.0<br>Licence: Unity Asset Store standard EULA  
+ * Mirrors and reflections for VR<br>Authors: Tom Goethals<br>Contact: https://fragilem17.wixsite.com/website<br>Version: 1.1.1<br>Licence: Unity Asset Store standard EULA  
+ * REAL FIRE [URP/HDRP]<br>Authors: RDR<br>Contact: https://www.artstation.com/artist/rdr<br>Version: 1.0<br>Licence: Unity Asset Store standard EULA  
 
 ## License
 Released April 1, 2022 under GPLv3.
