@@ -18,6 +18,7 @@ public class aAV_BasicBehaviour : MonoBehaviour
 	private Vector3 lastDirection;                        // Last direction the player was moving.
 	private Animator anim;                                // Reference to the Animator component.
 	private aAV_ThirdPersonOrbitCamBasic camScript;           // Reference to the third person camera script.
+	private aAV_icon toggle;
 	private bool sprint;                                  // Boolean to determine whether or not the player activated the sprint mode.
 	private bool changedFOV;                              // Boolean to store when the sprint action has changed de camera FOV.
 	private int hFloat;                                   // Animator variable related to Horizontal Axis.
@@ -26,7 +27,8 @@ public class aAV_BasicBehaviour : MonoBehaviour
 	private List<aAV_GenericBehaviour> overridingBehaviours;  // List of current overriding behaviours.
 	private Rigidbody rBody;                              // Reference to the player's rigidbody.
 	private int groundedBool;                             // Animator variable related to whether or not the player is on the ground.
-	private Vector3 colExtents;                           // Collider extents for ground test. 
+	private Vector3 colExtents;                           // Collider extents for ground test.
+	private bool avatarStart;
 
 	// Get current horizontal and vertical axes.
 	public float GetH { get { return h; } }
@@ -52,12 +54,15 @@ public class aAV_BasicBehaviour : MonoBehaviour
 		anim = GetComponent<Animator> ();
 		hFloat = Animator.StringToHash("H");
 		vFloat = Animator.StringToHash("V");
-		camScript = playerCamera.GetComponent<aAV_ThirdPersonOrbitCamBasic> ();
 		rBody = GetComponent<Rigidbody> ();
+		camScript = playerCamera.GetComponent<aAV_ThirdPersonOrbitCamBasic> ();
+		toggle = GameObject.Find("Main").transform.Find( "Menu/ToggleSwitch" ).gameObject.GetComponent<aAV_icon>();
 
 		// Grounded verification variables.
 		groundedBool = Animator.StringToHash("Grounded");
 		colExtents = GetComponent<Collider>().bounds.extents;
+		
+		avatarStart = false;
 	}
 
 	void Update()
@@ -69,22 +74,20 @@ public class aAV_BasicBehaviour : MonoBehaviour
 		anim.SetFloat(hFloat, h, 0.1f, Time.deltaTime);
 		anim.SetFloat(vFloat, v, 0.1f, Time.deltaTime);
 
-		// Toggle sprint by input.：スプリント
-//		sprint = aAV_Event.sprint;
-	
-		// Set the correct camera FOV for sprint mode.
-//		if(IsSprinting())
-//		{
-//			changedFOV = true;
-//			camScript.SetFOV(sprintFOV);
-//		}
-//		else if(changedFOV)
-//		{
-//			camScript.ResetFOV();
-//			changedFOV = false;
-//		}
 		// Set the grounded test on the Animator Controller.
 		anim.SetBool(groundedBool, IsGrounded());
+		
+		//開始時、下に地面や構造物が発生してから、アバターに重力効果をつける設定にする。
+		if(!avatarStart){
+			Ray ray = new Ray(rBody.position, Vector3.down);
+			RaycastHit hit;
+			bool falling = Physics.Raycast(ray, out hit);
+			if(falling){
+				rBody.useGravity = true;
+				toggle.initializeToggle();
+				avatarStart = true;
+			}
+		}
 	}
 
 	// Call the FixedUpdate functions of the active or overriding behaviours.

@@ -14,22 +14,27 @@ public class aAV_UI : MonoBehaviour {
 	Slider timeSlider;
 	[SerializeField]
 	InputField yearInput, monthInput, dayInput;
+	
+	public float tempRotation = 0;
 
-	public static double JD;
+	private bool usingTimeSlider = false;
+	private double earthRotAngle = 7.29211515d/100000d*180/Math.PI*60*60*24;
 
-	bool usingTimeSlider = false;
-
+	private double nowJD;
+	private double newJD;
+	
 	private aAV_StelController controller;
 	private aAV_StreamingSkybox streamingSkybox;
-	private aAV_CustomDateTime customDateTime;
+	private aAV_CustomDateTime localTime;
 	private GameObject stellariumObj;
-
+	private Material skyboxMaterial;
 
 	void Awake() {
+		Debug.Log("earthRotAngle"+ earthRotAngle);
 		stellariumObj = GameObject.Find( "Stellarium" );
 		controller = stellariumObj.GetComponent<aAV_StelController>();
 		streamingSkybox = stellariumObj.GetComponent<aAV_StreamingSkybox>();
-		customDateTime = stellariumObj.GetComponent<aAV_CustomDateTime>();
+		localTime = stellariumObj.GetComponent<aAV_CustomDateTime>();
 
 		tzInput = GameObject.Find("TZInputField").GetComponent<InputField>();
 		yearInput = GameObject.Find("YearInputField").GetComponent<InputField>();
@@ -55,15 +60,29 @@ public class aAV_UI : MonoBehaviour {
 		if(aAV_Public.basicInfo.minute != null) minuteInput.text =aAV_Public.basicInfo.minute.ToString("D2");
 		if(aAV_Public.basicInfo.second != null) secondInput.text = aAV_Public.basicInfo.second.ToString("D2");
 		if(aAV_Public.basicInfo.timezone != null) tzInput.text = aAV_Public.basicInfo.timezone;
+		string[] timezone = tzInput.text .Split(':');
+		double tzJD = double.Parse(timezone[0])+Math.Sign(double.Parse(timezone[0]))*double.Parse(timezone[1])/60;
+		int setyear = (int)Math.Abs(StringToInt(yearInput.text));
+		if (StringToInt(yearInput.text)<=0){	//AD表記をBC表記に変換
+			setyear = (int)Math.Abs(StringToInt(yearInput.text) -1);
+		}
 		SetTimebar();
+		localTime.SetDateTime(
+			setyear,
+			StringToInt(monthInput.text),
+			StringToInt(dayInput.text),
+			StringToInt(hourInput.text),
+			StringToInt(minuteInput.text),
+			StringToInt(secondInput.text),
+			(aAV_CustomDateTime.Era)(StringToInt(yearInput.text)<=0?0:1)
+		);
+		nowJD = localTime.ToJulianDay() - tzJD/24 + 0.5/100000;
 		UpdateDateTime();
-		JDsetup();
 	}
-
+	
 	public void GenerateSkybox() {	//Update,1h,10minボタンでcall
-		string[] timezone =  tzInput.text.Split(':');
-		double tz = double.Parse(timezone[0])+Math.Sign(double.Parse(timezone[0]))*double.Parse(timezone[1])/60;
-		StartCoroutine(controller.SetJD(JD-tz/24+0.5/100000));
+		StartCoroutine(controller.SetJD(newJD));
+		nowJD = newJD;
 
 		//時系列による3Dオブジェクトの表示コントロール
 		for(int i = 0; i < aAV_Public.datalist.Count; i++){
@@ -80,10 +99,6 @@ public class aAV_UI : MonoBehaviour {
 			}
 			aAV_Public.datalist[i].gameobject.SetActive(aAV_Public.datalist[i].visible && timeVisible);
 		}
-	}
-
-	public void GetStatus() {
-		Debug.Log("GetStatus");
 	}
 
 	public void OnTimeSliderDown() {
@@ -107,36 +122,41 @@ public class aAV_UI : MonoBehaviour {
 		timeSlider.value = float.Parse(hourInput.text)+float.Parse(minuteInput.text)/60+float.Parse(secondInput.text)/60/60;
 	}
 
-	public void UpdateDateTime() {	//各InputField入力時
-		int setyear = (int)Math.Abs(StringToInt(yearInput.text));
-		if (StringToInt(yearInput.text)<=0){	//AD表記をBC表記に変換
-			setyear = (int)Math.Abs(StringToInt(yearInput.text) -1);
-		}
-		customDateTime.SetDateTime(
-			setyear,
-			StringToInt(monthInput.text),
-			StringToInt(dayInput.text),
-			StringToInt(hourInput.text),
-			StringToInt(minuteInput.text),
-			StringToInt(secondInput.text),
-			(aAV_CustomDateTime.Era)(StringToInt(yearInput.text)<=0?0:1)
-		);
-		
-		JD = customDateTime.ToJulianDay();
-		JDsetup();
+	public void UpdateDateTime() {
+		//各InputField入力時にCall
+		//各日付のInputField値からdeltaJDを計算し、パブリック値に保存
 		if(!tzInput.text.Contains(":")){
 			try {
 				double tz = double.Parse(tzInput.text);
-				string sign = "";
-				if (tz>0){
-					sign = "+";
+				string sign = "+";
+				if (tz<0){
+					sign = "-";
 				}
 				tzInput.text = sign+((int)tz).ToString("D2")+":"+((int)Math.Abs(tz % 1 *60)).ToString("D2");
 			} catch {
 				tzInput.text = aAV_Public.basicInfo.timezone;
 			}
 		}
+		string[] timezone = tzInput.text .Split(':');
+		double tzJD = double.Parse(timezone[0])+Math.Sign(double.Parse(timezone[0]))*double.Parse(timezone[1])/60;
 		
+		int setyear = (int)Math.Abs(StringToInt(yearInput.text));
+		if (StringToInt(yearInput.text)<=0){	//AD表記をBC表記に変換
+			setyear = (int)Math.Abs(StringToInt(yearInput.text) -1);
+		}
+		
+		SetTimebar();
+		localTime.SetDateTime(
+			setyear,
+			StringToInt(monthInput.text),
+			StringToInt(dayInput.text),
+			StringToInt(hourInput.text),
+			StringToInt(minuteInput.text),
+			StringToInt(secondInput.text),
+			(aAV_CustomDateTime.Era)(StringToInt(yearInput.text)<0?0:1)
+		);
+		newJD = localTime.ToJulianDay() - tzJD/24 + 0.5/100000;
+		JDsetup(newJD);
 		aAV_Public.basicInfo.timezone = tzInput.text;
 		aAV_Public.basicInfo.year = setyear;
 		aAV_Public.basicInfo.month = int.Parse(monthInput.text);
@@ -155,22 +175,33 @@ public class aAV_UI : MonoBehaviour {
 		return result;
 	}
 
-	void JDsetup() {
-		customDateTime=customDateTime.FromJulianDay(JD);
-		yearInput.text = customDateTime.year.ToString();
-		if(customDateTime.era == (aAV_CustomDateTime.Era)0){	//BC表記をAD表記に変換
+	public void JDsetup(double JDtime) {
+		//DataUIの日付表示をJDtimeを基に設定
+		string[] timezone = tzInput.text.Split(':');
+		double tzJD = double.Parse(timezone[0])+Math.Sign(double.Parse(timezone[0]))*double.Parse(timezone[1])/60;
+		localTime=localTime.FromJulianDay(JDtime+tzJD/24-0.5/100000);
+		yearInput.text = localTime.year.ToString();
+		if(localTime.era == (aAV_CustomDateTime.Era)0){	//BC表記をAD表記に変換
 			var sign = "-";
-			if (customDateTime.year == 1){
+			if (localTime.year == 1){
 				sign="";
 			}
-			yearInput.text = sign+(customDateTime.year - 1).ToString();
+			yearInput.text = sign+(localTime.year - 1).ToString();
 		}
-		monthInput.text = customDateTime.month.ToString();
-		dayInput.text = customDateTime.day.ToString();
-		hourInput.text = customDateTime.hour.ToString("D2");
-		minuteInput.text = customDateTime.minute.ToString("D2");
-		secondInput.text = ((int)Math.Floor((float)customDateTime.second)).ToString("D2");
+		monthInput.text = localTime.month.ToString();
+		dayInput.text = localTime.day.ToString();
+		hourInput.text = localTime.hour.ToString("D2");
+		minuteInput.text = localTime.minute.ToString("D2");
+		secondInput.text = ((int)Math.Floor((float)localTime.second)).ToString("D2");
 		SetTimebar();
+		
+		//Skyboxの擬似リアルタイム回転
+		skyboxMaterial = RenderSettings.skybox;
+		float angle = controller.latitude*Mathf.Deg2Rad;
+		skyboxMaterial.SetVector("_RotationAxis", new Vector4(0,Mathf.Sin(angle),Mathf.Cos(angle),1));
+		tempRotation = Mathf.Repeat((float)((newJD - nowJD)*earthRotAngle), 360);
+		skyboxMaterial.SetFloat("_Rotation", tempRotation);
+		
 	}
 	
 	public void yearUP() {
@@ -223,23 +254,23 @@ public class aAV_UI : MonoBehaviour {
 	}
 	
 	public void hour1UP() {
-		JD += (double)1/24;
-		JDsetup();
+		newJD += (double)1/24;
+		JDsetup(newJD);
 		GenerateSkybox();
 	}
 	public void hour1DOWN() {
-		JD -= (double)1/24;
-		JDsetup();
+		newJD -= (double)1/24;
+		JDsetup(newJD);
 		GenerateSkybox();
 	}
 	public void min10UP() {
-		JD += (double)10/60/24;
-		JDsetup();
+		newJD += (double)10/60/24;
+		JDsetup(newJD);
 		GenerateSkybox();
 	}
 	public void min10DOWN() {
-		JD -= (double)10/60/24;
-		JDsetup();
+		newJD -= (double)10/60/24;
+		JDsetup(newJD);
 		GenerateSkybox();
 	}
 

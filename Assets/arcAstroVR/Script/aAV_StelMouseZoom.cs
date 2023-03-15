@@ -13,10 +13,9 @@ public class aAV_StelMouseZoom : MonoBehaviour {
 
     public float minFieldOfView = 2.0f;
     public float maxFieldOfView = 120.0f;
-    public float stepOrFactor=5; // either n degrees per mouse rotation impulse or a scaling factor like 0.05 for 5 percent change.
+    public float stepOrFactor=5;
 
-    private float lastFoV=200; // keep track of this to avoid too much traffic.
-    private aAV_StelController controller; // This finds the related script providing communication to Stellarium.
+    private aAV_StelController controller;
 	private GameObject mapCamObj;
 	private GameObject mainCamObj;
 
@@ -26,37 +25,6 @@ public class aAV_StelMouseZoom : MonoBehaviour {
 		mapCamObj =  GameObject.Find("Main").transform.Find("MapCamera").gameObject;
 		controller = gameObject.GetComponent<aAV_StelController>();
 	}
-
-    void Start()
-    {
-#if false
-        if (controller && controller.spoutMode)
-        {
-            if (lastFoV != Camera.main.fieldOfView)
-            {
-                lastFoV = Camera.main.fieldOfView;
-                StartCoroutine(controller.SetFoV(lastFoV));
-                //Debug.Log("StelMouseZoom: NEW FOV SET: " + lastFoV);
-            }
-            //else
-            //    Debug.Log("NEW FOV not required to SET.");
-        }
-#endif
-    }
-
-    void Update () {
-        if (controller && controller.connectToStellarium && controller.spoutMode)
-        {
-            if (lastFoV != Camera.main.fieldOfView)
-            {
-                lastFoV = Camera.main.fieldOfView;
-                StartCoroutine(controller.SetFoV(lastFoV));
-                //Debug.Log("StelMouseZoom: NEW FOV SET: "+lastFoV);
-            }
-            //else
-            //    Debug.Log("NEW FOV not required to SET.");
-        }
-    }
     
 	public void Zoom(){
 		if (!aAV_Public.showCompass){

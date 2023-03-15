@@ -63,9 +63,11 @@ public class aAV_ThirdPersonOrbitCamBasic : MonoBehaviour
 	{
 		if(!aAV_Public.uiDrag && !EventSystem.current.IsPointerOverGameObject(0))	
 		{
+			//カメラのFOVに応じた視点移動の補正
+			var camSpeed = transform.GetComponent<Camera>().fieldOfView / 60;
 			// 視点移動
-			angleH += Mathf.Clamp(aAV_Event.rotateH, -1, 1) * 60 * horizontalAimingSpeed * Time.deltaTime;
-			angleV += Mathf.Clamp(aAV_Event.rotateV, -1, 1) * 60 * verticalAimingSpeed * Time.deltaTime;
+			angleH += Mathf.Clamp(aAV_Event.rotateH, -1, 1) * 60 * horizontalAimingSpeed * Time.deltaTime * camSpeed;
+			angleV += Mathf.Clamp(aAV_Event.rotateV, -1, 1) * 60 * verticalAimingSpeed * Time.deltaTime * camSpeed;
 
 			if( aAV_Public.displayMode == 1){	//HMD出力の場合は、上下0度固定
 				angleV = 0;
@@ -108,9 +110,10 @@ public class aAV_ThirdPersonOrbitCamBasic : MonoBehaviour
 
 		//カメラの場所・方向を設定
 		if (aAV_Public.displayMode == 1){
-			cam.position =  player.position;	//HUDの場合、足元をカメラ起点とする
+			cam.position = player.position;	//HUDの場合、足元をカメラ起点とする
 		}else{
-			cam.position =  player.position + camYRotation * smoothPivotOffset + aimRotation * smoothCamOffset;
+			var avatarPosition = player.position + camYRotation * smoothPivotOffset + aimRotation * smoothCamOffset;
+			cam.position = avatarPosition;
 		}
 	}
 

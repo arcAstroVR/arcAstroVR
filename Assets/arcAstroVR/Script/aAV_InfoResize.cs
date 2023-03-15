@@ -7,12 +7,14 @@ public class aAV_InfoResize : MonoBehaviour, IBeginDragHandler, IDragHandler, IE
 	private GameObject info;
 	private GameObject view;
 	private GameObject log;
+	private aAV_Event aavEvent;
 	
 	void Awake () {
 		Transform mainTrans = GameObject.Find("Main").transform;
 		info = mainTrans.Find("Menu/InfoView").gameObject;
 		view = mainTrans.Find("Menu/InfoView/ScrollView").gameObject;
 		log = mainTrans.Find("Menu/InfoView/ScrollView/Viewport/Log").gameObject;
+		aavEvent = GameObject.Find("EventSystem").gameObject.GetComponent<aAV_Event>();
 	}
 
 	public void OnBeginDrag(PointerEventData e){
@@ -26,6 +28,7 @@ public class aAV_InfoResize : MonoBehaviour, IBeginDragHandler, IDragHandler, IE
 			view.GetComponent<RectTransform>().sizeDelta -= new Vector2(0f, e.delta.y);
 		}
 		aAV_Public.uiDrag = true;
+		aavEvent.selectInfotarget();
 	}
 
 	public void OnEndDrag(PointerEventData e){

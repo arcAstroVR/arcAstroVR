@@ -15,12 +15,15 @@ public class aAV_Setting : MonoBehaviour
 	private GameObject zoneObj;	
 	private GameObject domeObj;	
 	private GameObject copyrightObj;
+	private GameObject domeCamera;	
 	private GameObject xrLefthand;
 	private GameObject xrRighthand;
+	private Transform markerEdit;
+	private Transform lineEdit;
+	private Transform objectEdit;
 
 	private aAV_Public publicObj;
 	private aAV_MoveBehaviour movebehaviour;
-	private aAV_DomeShader domeShader;
 	private RectTransform topbar;	
 	private RectTransform position;	
 	private RectTransform cursor;	
@@ -43,6 +46,7 @@ public class aAV_Setting : MonoBehaviour
 	private InputField fovField;
 	private Toggle fixToggle;
 	private XRRayInteractor rightHandRay;
+	private Light ambientLight;
 
 	private int lastLanguage;
 	private int lastType;
@@ -91,12 +95,15 @@ public class aAV_Setting : MonoBehaviour
 		fovField 			= mainTransform.Find("Menu/Setting/Output/Dome/FovField").gameObject.GetComponent < InputField > ();
 		fixToggle 			= mainTransform.Find("Menu/Setting/Output/Dome/Fix").gameObject.GetComponent < Toggle > ();
 		movebehaviour = mainTransform.Find("Avatar").gameObject.GetComponent<aAV_MoveBehaviour>();
-		domeShader 	= GameObject.Find("Main Camera").GetComponent<aAV_DomeShader>();
+		domeCamera 	= GameObject.Find("Camera Offset").transform.Find("DomeCamera").gameObject;
 		xrLefthand 		= GameObject.Find("Camera Offset").transform.Find("LeftHand Controller").gameObject;
 		xrRighthand 		= GameObject.Find("Camera Offset").transform.Find("RightHand Controller").gameObject;
 		rightHandRay = xrRighthand.GetComponent<XRRayInteractor>();
+		ambientLight = GameObject.Find("AmbientLight").GetComponent<Light>();
+		markerEdit = mainTransform.Find("Menu/MarkerEdit").gameObject.transform;
+		lineEdit = mainTransform.Find("Menu/LineEdit").gameObject.transform;
+		objectEdit = mainTransform.Find("Menu/ObjectEdit").gameObject.transform;
 
-		ambientSlider.value = RenderSettings.ambientIntensity;
 		switch(LocalizationSettings.SelectedLocale.ToString()){
 			case "English":
 				langSetting.value = 0;
@@ -132,7 +139,7 @@ public class aAV_Setting : MonoBehaviour
 			avatarField.text = aAV_Public.basicInfo.avatar_H.ToString("F1");
 		}
 		avatarEye.text = (float.Parse(avatarField.text)*1.654f/176f).ToString("F1")+"cm";
-		scaleSlider.value = PlayerPrefs.GetFloat("ScaleUI", 1f);
+		scaleSlider.value = PlayerPrefs.GetFloat("ScaleUI", Screen.dpi/100f)*100f/Screen.dpi;
 		ambientSlider.value = PlayerPrefs.GetFloat("Ambient", 1f);
 		pitchField.text = PlayerPrefs.GetString ("DomePitch", "-90");
 		rollField.text = PlayerPrefs.GetString ("DomeRoll", "0");
@@ -191,7 +198,7 @@ public class aAV_Setting : MonoBehaviour
 			PlayerPrefs.SetInt("Zone",int.Parse(zoneField.text));
 		}
 		PlayerPrefs.SetFloat("AvatarHeight", float.Parse(avatarField.text));
-		PlayerPrefs.SetFloat("ScaleUI", scaleSlider.value);
+		PlayerPrefs.SetFloat("ScaleUI", scaleSlider.value*Screen.dpi/100f);
 		PlayerPrefs.SetFloat("Ambient", ambientSlider.value);
 		PlayerPrefs.SetString("DomePitch", pitchField.text);
 		PlayerPrefs.SetString("DomeRoll", rollField.text);
@@ -235,7 +242,8 @@ public class aAV_Setting : MonoBehaviour
 		changeAvatarHeight();
 		scaleSlider.value=lastScale ;
 		ambientSlider.value=lastSlide;
-		RenderSettings.ambientIntensity = lastSlide;
+		RenderSettings.ambientIntensity = lastSlide*7f-6f;
+		ambientLight.intensity = lastSlide-1f;
 		outputSetting.value=lastDisplay;
 		pitchField.text = lastPitch;
 		rollField.text = lastRoll;
@@ -321,7 +329,7 @@ public class aAV_Setting : MonoBehaviour
 
 	public void OnScaleSlider(){
 		scaleField.text = scaleSlider.value.ToString("F1");
-		menuObj.GetComponent<CanvasScaler>().scaleFactor = scaleSlider.value*2f;
+		menuObj.GetComponent<CanvasScaler>().scaleFactor = scaleSlider.value*Screen.dpi/100f;
 	}
 
 	public void changeScale(){
@@ -336,7 +344,8 @@ public class aAV_Setting : MonoBehaviour
 
 	public void OnAmbientSlider(){
 		ambientField.text = ambientSlider.value.ToString("F1");
-		RenderSettings.ambientIntensity = ambientSlider.value;
+		RenderSettings.ambientIntensity = ambientSlider.value*7f-6f;
+		ambientLight.intensity = ambientSlider.value-1f;
 	}
 
 	public void changeAmbient(){
@@ -367,7 +376,7 @@ public class aAV_Setting : MonoBehaviour
 				mainTransform.Find("Menu/DateTimeSetting").gameObject.SetActive(true);
 				mainTransform.Find("Menu/TopBar/showButton/Text").gameObject.GetComponent<Text> ().text = "Close Info";
 				domeObj.SetActive(false);
-				domeShader.enabled = false;
+				domeCamera.SetActive(false);
 				#if UNITY_STANDALONE_WIN
 				if(XRGeneralSettings.Instance && XRGeneralSettings.Instance.Manager.activeLoader != null){
 					manualXRControl.StopXR();
@@ -377,6 +386,10 @@ public class aAV_Setting : MonoBehaviour
 				#endif
 				
 				//UI Position
+				transform.localScale = new Vector3(1f,1f,1f);
+				markerEdit.localScale = new Vector3(1f,1f,1f);
+				lineEdit.localScale = new Vector3(1f,1f,1f);
+				objectEdit.localScale = new Vector3(1f,1f,1f);
 				topbarBack.enabled = true;
 				topbar.anchorMin = new Vector2(0f, 1f);
 				topbar.anchorMax = new Vector2(1f, 1f);
@@ -390,6 +403,7 @@ public class aAV_Setting : MonoBehaviour
 				icon.anchorMin = new Vector2(0f, 0f);
 				icon.anchorMax = new Vector2(0f, 0f);
 				icon.anchoredPosition = new Vector3(5f,30f,0f);
+				icon.localScale = new Vector3(1f,1f,1f);
 				mainTransform.Find("Menu/ToggleSwitch/Toggle-C").gameObject.GetComponent<RectTransform>().anchoredPosition = new Vector3(0f,0f,0f);
 				mainTransform.Find("Menu/ToggleSwitch/Toggle-V").gameObject.GetComponent<RectTransform>().anchoredPosition = new Vector3(50f,0f,0f);
 				mainTransform.Find("Menu/ToggleSwitch/Toggle-R").gameObject.GetComponent<RectTransform>().anchoredPosition = new Vector3(100f,0f,0f);
@@ -402,6 +416,7 @@ public class aAV_Setting : MonoBehaviour
 				datetime.anchorMin = new Vector2(1f, 0f);
 				datetime.anchorMax = new Vector2(1f, 0f);
 				datetime.anchoredPosition = new Vector3(-5f,10f,0f);
+				datetime.localScale = new Vector3(1f,1f,1f);
 
 				menuObj.GetComponent<aAV_Direction>().ViewUpdate();
 				break;
@@ -420,7 +435,7 @@ public class aAV_Setting : MonoBehaviour
 				mainTransform.Find("Menu/DateTimeSetting").gameObject.SetActive(false);
 				mainTransform.Find("Menu/TopBar/showButton/Text").gameObject.GetComponent<Text> ().text = "Show Info";
 				domeObj.SetActive(false);
-				domeShader.enabled = false;
+				domeCamera.SetActive(false);
 				#if UNITY_STANDALONE_WIN
 				if(XRGeneralSettings.Instance && XRGeneralSettings.Instance.Manager.activeLoader == null){
 					StartCoroutine(manualXRControl.StartXRCoroutine());
@@ -432,19 +447,24 @@ public class aAV_Setting : MonoBehaviour
 				#endif
 
 				//UI Position
+				transform.localScale = new Vector3(0.4f,0.4f,0.4f);
+				markerEdit.localScale = new Vector3(0.4f,0.4f,0.4f);
+				lineEdit.localScale = new Vector3(0.4f,0.4f,0.4f);
+				objectEdit.localScale = new Vector3(0.4f,0.4f,0.4f);
 				topbarBack.enabled = false;
-				topbar.anchorMin = new Vector2(0.5f, 0.5f);
-				topbar.anchorMax = new Vector2(0.5f, 0.5f);
-				topbar.anchoredPosition = new Vector3(-130f,130f,0f);
-				position.anchoredPosition = new Vector3(5f,-15f,0f);
-				cursor.anchoredPosition = new Vector3(5f,-25f,0f);
+//				topbar.anchorMin = new Vector2(0.5f, 0.5f);
+//				topbar.anchorMax = new Vector2(0.5f, 0.5f);
+//				topbar.anchoredPosition = new Vector3(-130f,130f,0f);
+//				position.anchoredPosition = new Vector3(5f,-15f,0f);
+//				cursor.anchoredPosition = new Vector3(5f,-25f,0f);
 				infoview.anchorMin = new Vector2(0.5f, 0.5f);
 				infoview.anchorMax = new Vector2(0.5f, 0.5f);
-				infoview.anchoredPosition = new Vector3(-230f,100f,0f);
-				infoview.localScale = new Vector3(0.8f,0.8f,1f);
+				infoview.anchoredPosition = new Vector3(-120f,30f,0f);
+				infoview.localScale = new Vector3(0.4f,0.4f,0.4f);
 				icon.anchorMin = new Vector2(0.5f, 0.5f);
 				icon.anchorMax = new Vector2(0.5f, 0.5f);
-				icon.anchoredPosition = new Vector3(-230f,-160f,0f);
+				icon.anchoredPosition = new Vector3(-88f,-70f,0f);
+				icon.localScale = new Vector3(0.4f,0.4f,0.4f);
 				mainTransform.Find("Menu/ToggleSwitch/Toggle-C").gameObject.GetComponent<RectTransform>().anchoredPosition = new Vector3(0f,0f,0f);
 				mainTransform.Find("Menu/ToggleSwitch/Toggle-V").gameObject.GetComponent<RectTransform>().anchoredPosition = new Vector3(50f,0f,0f);
 				mainTransform.Find("Menu/ToggleSwitch/Toggle-R").gameObject.GetComponent<RectTransform>().anchoredPosition = new Vector3(100f,0f,0f);
@@ -456,7 +476,8 @@ public class aAV_Setting : MonoBehaviour
 				mainTransform.Find("Menu/ToggleSwitch/Toggle-P").gameObject.GetComponent<RectTransform>().anchoredPosition = new Vector3(400f,0f,0f);
 				datetime.anchorMin = new Vector2(0.5f, 0.5f);
 				datetime.anchorMax = new Vector2(0.5f, 0.5f);
-				datetime.anchoredPosition = new Vector3(115f,-160f,0f);
+				datetime.anchoredPosition = new Vector3(45f,-90f,0f);
+				datetime.localScale = new Vector3(0.4f,0.4f,0.4f);
 				
 				menuObj.GetComponent<aAV_Direction>().ViewUpdate();
 				break;
@@ -476,7 +497,7 @@ public class aAV_Setting : MonoBehaviour
 				mainTransform.Find("Menu/DateTimeSetting").gameObject.SetActive(true);
 				mainTransform.Find("Menu/TopBar/showButton/Text").gameObject.GetComponent<Text> ().text = "Show Info";
 				domeObj.SetActive(true);
-				domeShader.enabled = true;
+				domeCamera.SetActive(true);
 				#if UNITY_STANDALONE_WIN
 				if(XRGeneralSettings.Instance && XRGeneralSettings.Instance.Manager.activeLoader != null){
 					manualXRControl.StopXR();
@@ -486,6 +507,10 @@ public class aAV_Setting : MonoBehaviour
 				#endif
 
 				//UI Position
+				transform.localScale = new Vector3(1f,1f,1f);
+				markerEdit.localScale = new Vector3(1f,1f,1f);
+				lineEdit.localScale = new Vector3(1f,1f,1f);
+				objectEdit.localScale = new Vector3(1f,1f,1f);
 				topbarBack.enabled = false;
 				topbar.anchorMin = new Vector2(0f, 1f);
 				topbar.anchorMax = new Vector2(1f, 1f);
@@ -499,6 +524,7 @@ public class aAV_Setting : MonoBehaviour
 				icon.anchorMin = new Vector2(0f, 0f);
 				icon.anchorMax = new Vector2(0f, 0f);
 				icon.anchoredPosition = new Vector3(5f,30f,0f);
+				icon.localScale = new Vector3(1f,1f,1f);
 				mainTransform.Find("Menu/ToggleSwitch/Toggle-C").gameObject.GetComponent<RectTransform>().anchoredPosition = new Vector3(0f,140f,0f);
 				mainTransform.Find("Menu/ToggleSwitch/Toggle-V").gameObject.GetComponent<RectTransform>().anchoredPosition = new Vector3(50f,140f,0f);
 				mainTransform.Find("Menu/ToggleSwitch/Toggle-R").gameObject.GetComponent<RectTransform>().anchoredPosition = new Vector3(0f,70f,0f);
@@ -515,6 +541,7 @@ public class aAV_Setting : MonoBehaviour
 				datetime.anchorMin = new Vector2(1f, 0f);
 				datetime.anchorMax = new Vector2(1f, 0f);
 				datetime.anchoredPosition = new Vector3(-5f,10f,0f);
+				datetime.localScale = new Vector3(1f,1f,1f);
 				
 				menuObj.GetComponent<aAV_Direction>().ViewUpdate();
 				break;
@@ -524,9 +551,9 @@ public class aAV_Setting : MonoBehaviour
 	}
 
 	public void changeDome(){
-		GameObject.Find("Main Camera").GetComponent<aAV_DomeShader>().worldCameraPitch = float.Parse(pitchField.text);
-		GameObject.Find("Main Camera").GetComponent<aAV_DomeShader>().worldCameraRoll = float.Parse(rollField.text);
-		GameObject.Find("Main Camera").GetComponent<aAV_DomeShader>().FOV = int.Parse(fovField.text);
+		domeCamera.GetComponent<aAV_Domemaster>().domeCameraPitch = float.Parse(pitchField.text);
+		domeCamera.GetComponent<aAV_Domemaster>().domeCameraRoll = float.Parse(rollField.text);
+		domeCamera.GetComponent<aAV_Domemaster>().FOV = int.Parse(fovField.text);
 		aAV_Public.domeFix = fixToggle.isOn;
 	}
 	

@@ -16,7 +16,6 @@ public class aAV_StelKeyboardTriggers : MonoBehaviour
 
     void Awake()
     {
-        // just initialize the controller...
         controller = gameObject.GetComponent<aAV_StelController>();
         if (controller == null)
             Debug.LogWarning("StelKeyboardTriggers: Cannot find StelController! controller not initialized");
@@ -34,7 +33,6 @@ public class aAV_StelKeyboardTriggers : MonoBehaviour
         }
 
 		if(!aAV_Event.textInput){		//Dialogが開いていない（テキスト入力がない）時、実行
-	        // Any Control, but no Shift or Alt
 	        if ((Keyboard.current.leftCtrlKey.isPressed || Keyboard.current.rightCtrlKey.isPressed) && !Keyboard.current.leftShiftKey.isPressed && !Keyboard.current.rightShiftKey.isPressed && !Keyboard.current.leftAltKey.isPressed && !Keyboard.current.rightAltKey.isPressed)
 	        {
 	            if (Keyboard.current.numpadPlusKey.wasPressedThisFrame)
@@ -52,7 +50,18 @@ public class aAV_StelKeyboardTriggers : MonoBehaviour
 	        // NO shifts at all...
 	        if (!Keyboard.current.leftCommandKey.isPressed && !Keyboard.current.rightCommandKey.isPressed && !Keyboard.current.leftCtrlKey.isPressed && !Keyboard.current.rightCtrlKey.isPressed && !Keyboard.current.leftShiftKey.isPressed && !Keyboard.current.rightShiftKey.isPressed && !Keyboard.current.leftAltKey.isPressed && !Keyboard.current.rightAltKey.isPressed)
 	        {
-	            if (Keyboard.current[Key.F11].wasPressedThisFrame) StartCoroutine(controller.UpdateSkyboxTiles());
+	            if (Keyboard.current[Key.F1].wasPressedThisFrame) streamingSkybox.SkyName = "f1";
+	            if (Keyboard.current[Key.F2].wasPressedThisFrame) streamingSkybox.SkyName = "f2";
+	            if (Keyboard.current[Key.F3].wasPressedThisFrame) streamingSkybox.SkyName = "f3";
+	            if (Keyboard.current[Key.F4].wasPressedThisFrame) streamingSkybox.SkyName = "f4";
+	            if (Keyboard.current[Key.F5].wasPressedThisFrame) streamingSkybox.SkyName = "f5";
+	            if (Keyboard.current[Key.F6].wasPressedThisFrame) streamingSkybox.SkyName = "f6";
+	            if (Keyboard.current[Key.F7].wasPressedThisFrame) streamingSkybox.SkyName = "f7";
+	            if (Keyboard.current[Key.F8].wasPressedThisFrame) streamingSkybox.SkyName = "f8";
+	            if (Keyboard.current[Key.F9].wasPressedThisFrame) streamingSkybox.SkyName = "f9";
+	            if (Keyboard.current[Key.F10].wasPressedThisFrame) streamingSkybox.SkyName = "f10";
+	            if (Keyboard.current[Key.F11].wasPressedThisFrame) streamingSkybox.SkyName = "f11";
+	            if (Keyboard.current[Key.F12].wasPressedThisFrame) streamingSkybox.SkyName = "f12";
 	            if (Keyboard.current[Key.T].wasPressedThisFrame) StartCoroutine(controller.DoAction("actionShow_Atmosphere"));
 	            if (Keyboard.current[Key.Q].wasPressedThisFrame) StartCoroutine(controller.DoAction("actionShow_Cardinal_Points"));
 	            if (Keyboard.current[Key.E].wasPressedThisFrame) StartCoroutine(controller.DoAction("actionShow_Equatorial_Grid"));

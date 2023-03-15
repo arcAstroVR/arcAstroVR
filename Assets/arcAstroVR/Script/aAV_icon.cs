@@ -36,11 +36,6 @@ public class aAV_icon : MonoBehaviour
 		controller = GameObject.Find("Main").transform.Find("Stellarium").gameObject.GetComponent<aAV_StelController>();
 	}
 
-	void Start()
-	{
-		initializeToggle();
-	}
-
 	public void initializeToggle(){
 		if(controller != null){
 			JSONObject jsonActions = controller.jsonActions.GetField("changes");

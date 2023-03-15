@@ -19,52 +19,49 @@ using Defective.JSON;
 public class aAV_StreamingSkybox : MonoBehaviour {
 
 	[Tooltip("Subdirectory name in StreamingAssets folder")]
-	private string imgDir;// 岩城追加 2021-03-19 "/Users/iwashiro/Desktop/data_sannai/"
-	private string dataDir;// 岩城追加 2021-03-19 "/Users/iwashiro/Library/Application Support/Stellarium/"
-	private string dataFile="unityData.txt";// 岩城追加 2021-03-19 
-	private string defaultSkyname = "";// 岩城修正
-	private string skyName = "live";  // subdir of StreamingAssets/SkyBoxes/ where the images written by Stellarium have been moved. 
+	private string pathBase;
+	private string dataFile="unityData.txt"; 
+	private string skyName = "";
 
-	private Dictionary<string, Texture2D> sides = new Dictionary<string, Texture2D>(); // private dictionary for Material creation.
+	private Dictionary<string, Texture2D> sides = new Dictionary<string, Texture2D>();
 
-	private bool isCreated;	// 岩城追加 2021-03-19 
-	private bool isLoaded;	// 岩城追加 2021-03-19 
-	private DateTime lastModified;	// 岩城追加 2021-03-19 
+	private bool isCreated;
+	private bool isLoaded;
+	private DateTime lastModified;
 	private GameObject progressBar;
+	private Text screenMode;
 	private float loading;
 	private int load0,load1, load2, load3, load4, load5, load6;
+	private double JD;
 
-	private string pathBase;		  // will contain the path (directory or URL) to the SkyBoxes folder. Usually, use SkydataPath to construct file paths/URLs.
 	private JSONObject jsonTime;	  // a small JSON format-ident to StelController*s JSONtime that represents the time data from the unityData.txt;
 	private JSONObject jsonLightInfo; // a small JSON that contains data about the current luminaire from the unityData.txt. 
 	private JSONObject jsonSunInfo;   // a small JSON that contains data about Sun   from the unityData.txt. 
 	private JSONObject jsonMoonInfo;  // a small JSON that contains data about Moon  from the unityData.txt. 
 	private JSONObject jsonVenusInfo; // a small JSON that contains data about Venus from the unityData.txt. 
+	private aAV_UI dateUI;
 	private aAV_StelController controller;
+	private aAV_CustomDateTime customDateTime;
 
 	FileSystemWatcher watcher1;
 	FileSystemWatcher watcher2;
 
 	private void Awake()
 	{
-
-		dataDir=aAV_Public.basicInfo.filedir;  //岩城追加
-		
-		imgDir = "~/.stellarium/";
+		pathBase = "~/.stellarium/";
 		if (Application.platform == RuntimePlatform.OSXPlayer || Application.platform == RuntimePlatform.OSXEditor)
 		{
 			Regex reg = new Regex(@"(^.*?\/Application Support\/).*");
 			Match match = reg.Match(Application.persistentDataPath);
-			imgDir = match.Groups[1] + "Stellarium/";
+			pathBase = match.Groups[1] + "Stellarium/";
 		}
 		else if (Application.platform == RuntimePlatform.WindowsPlayer || Application.platform == RuntimePlatform.WindowsEditor)
 		{
 			Regex reg = new Regex(@"(^.*?\/AppData\/).*");
 			Match match = reg.Match(Application.persistentDataPath);
-			imgDir = match.Groups[1] + "Roaming/Stellarium/";
+			pathBase = match.Groups[1] + "Roaming/Stellarium/";
 		}
 
-		skyName = defaultSkyname;
 		// prepare Material dictionary
 		sides.Add("Unity1-north.png", null);
 		sides.Add("Unity2-east.png", null);
@@ -72,19 +69,23 @@ public class aAV_StreamingSkybox : MonoBehaviour {
 		sides.Add("Unity4-west.png", null);
 		sides.Add("Unity5-top.png", null);
 		sides.Add("Unity6-bottom.png", null);
-		pathBase = imgDir;
 		controller = gameObject.GetComponent<aAV_StelController>();
+		dateUI = GameObject.Find("Main").transform.Find("Menu/DateTimeSetting").gameObject.GetComponent<aAV_UI>();
 		watcher1 = new FileSystemWatcher();
 		watcher2 = new FileSystemWatcher();
 		isCreated = false;
 		isLoaded = false;
 		progressBar=GameObject.Find("Main").transform.Find("Menu/ProgressBar").gameObject;
+		screenMode=GameObject.Find("Main").transform.Find("Menu/TopBar/screen").gameObject.GetComponent<Text>();
 		load0 = load1 = load2 = load3 = load4 = load5 = load6 = 0;
+		
 	}
 
 	private void Start()
 	{
-		StartCoroutine(ParseDataFile());
+		ParseDataFile();
+		skyName = "f1";
+		FileCopy();
 	}
 
 	private void Update()
@@ -97,29 +98,35 @@ public class aAV_StreamingSkybox : MonoBehaviour {
 			progressBar.transform.Find("progress").gameObject.GetComponent<Text>().text = ((int)loading).ToString()+"%";
 			progressBar.GetComponent<Image>().fillAmount = loading/100f;
 		}
-		if (isCreated) {	//岩城追加 2021-03-19 
+		if (isCreated) {
 			isCreated = false;
 			isLoaded = false;
 			Debug.Log(dataFile+" is Changed.");
+			FileCopy();
 			StartCoroutine(DoGetImages(SkydataPath));
-			StartCoroutine(ParseDataFile());
+			ParseDataFile();
 			progressBar.SetActive(false);
 			load0 = load1 = load2 = load3 = load4 = load5 = load6 = 0;
+			
+			//擬似リアルタイム回転リセット
+			dateUI.GetComponent<aAV_UI>().tempRotation = 0;
 		}
 	}
 
 	private void OnEnable()
 	{
-		watcher1.Path = imgDir;// 岩城修正 2021-03-19
+		//unityData.txtの監視
+		watcher1.Path = pathBase;
 		watcher1.NotifyFilter = NotifyFilters.LastWrite;
-		watcher1.Filter = "*"+dataFile;// 岩城修正 2021-03-19
+		watcher1.Filter = "*"+dataFile;
 		watcher1.Changed += OnLiveDirectoryChanged;
 		watcher1.Created += OnLiveDirectoryChanged;
 		watcher1.IncludeSubdirectories = false;
 		watcher1.EnableRaisingEvents = true;
-		Debug.Log("Watch File = "+imgDir+dataFile);
+		Debug.Log("Watch File = "+pathBase+dataFile);
 		
-		watcher2.Path = imgDir;
+		//Unity*.pngの監視
+		watcher2.Path = pathBase;
 		watcher2.NotifyFilter = NotifyFilters.LastWrite;
 		watcher2.Filter = "Unity*png";
 		watcher2.Changed += OnLiveDirectoryChanged;
@@ -166,7 +173,7 @@ public class aAV_StreamingSkybox : MonoBehaviour {
 
 	private Material CreateSkyboxMaterial(Dictionary<string, Texture2D> sides)
 	{
-		Shader skyboxShader = Shader.Find("Skybox/6 Sided");
+		Shader skyboxShader = Shader.Find("Skybox/6 Sided - Arbitrary Rotation");
 		if (!skyboxShader) Debug.LogError("Shader not found!");
 		Material mat = new Material(skyboxShader);
 		mat.SetTexture("_FrontTex", sides["Unity4-west.png"]);
@@ -175,8 +182,8 @@ public class aAV_StreamingSkybox : MonoBehaviour {
 		mat.SetTexture("_RightTex", sides["Unity3-south.png"]);
 		mat.SetTexture("_UpTex", sides["Unity5-top.png"]);
 		mat.SetTexture("_DownTex", sides["Unity6-bottom.png"]);
-		float rot = -controller.northAngle; if (rot < 0) rot += 360.0f;
-		mat.SetFloat("_Rotation", Mathf.Clamp(rot, 0, 360));
+		float rot = controller.northAngle + 180;
+		mat.SetFloat("_Direction", Mathf.Repeat(rot, 360));
 		return mat;
 	}
 
@@ -196,7 +203,6 @@ public class aAV_StreamingSkybox : MonoBehaviour {
 		return jsonVenusInfo;
 	}
 
-	// Readonly: path (directory or URL) to current skybox textures and info file.
 	public string SkydataPath
 	{
 		get
@@ -214,9 +220,16 @@ public class aAV_StreamingSkybox : MonoBehaviour {
 
 		set
 		{
+			//スクリーン切り替え：skyName=F1〜F12
 			skyName = value;
+			if(!Directory.Exists(SkydataPath)){
+				FileCopy();
+			}
 			StartCoroutine(DoGetImages(SkydataPath));
-			StartCoroutine(ParseDataFile());
+			ParseDataFile();
+			//指定スクリーンJD値をDateUIに反映
+			dateUI.JDsetup(JD);
+			screenMode.text = "Screen : "+ skyName.ToUpper();
 		}
 	}
 
@@ -229,8 +242,7 @@ public class aAV_StreamingSkybox : MonoBehaviour {
 	public IEnumerator DoGetImages(string directory) {
 		Debug.Log("start DoGetImages："+directory);
 		List<string> filenames = new List<string>(sides.Keys);
-		//int sampleHeight = 0;
-		Texture2D texture = Texture2D.whiteTexture; // new Texture2D(2, 2, TextureFormat.BGRA32, true);
+		Texture2D texture = Texture2D.whiteTexture;
 		//Debug.Log("Filenames dictionary has " + filenames.Count + " entries");
 		foreach (string filename in filenames) {
 			string filePath = System.IO.Path.Combine(directory, filename);
@@ -274,25 +286,14 @@ public class aAV_StreamingSkybox : MonoBehaviour {
 		SetSkybox(CreateSkyboxMaterial(sides));
 	}
 
-	// Cut central square from landscape-oriented texture. 
 	public static Texture2D CropTexture(Texture2D originalTexture) {
 		Rect cropRect=new Rect((originalTexture.width*.5f)-(originalTexture.height * .5f),0f,originalTexture.height,originalTexture.height);
-		// Make sure the crop rectangle stays within the original Texture dimensions
-		//cropRect.x = Mathf.Clamp(cropRect.x, 0, originalTexture.width);
-		//cropRect.width = Mathf.Clamp(cropRect.width, 0, originalTexture.width - cropRect.x);
-		//cropRect.y = Mathf.Clamp(cropRect.y, 0, originalTexture.height);
-		//cropRect.height = Mathf.Clamp(cropRect.height, 0, originalTexture.height - cropRect.y);
-		if(cropRect.height <= 0 || cropRect.width <= 0) return null; // dont create a Texture with size 0
-
+		if(cropRect.height <= 0 || cropRect.width <= 0) return null; 
+		
 		Texture2D newTexture = new Texture2D((int)cropRect.width, (int)cropRect.height, TextureFormat.RGBA32, false);
-		//Texture2D newTexture = new Texture2D((int)cropRect.width, (int)cropRect.height, TextureFormat.BGRA32, false); // NOTE new BGRA!
 		Color[] pixels = originalTexture.GetPixels((int)cropRect.x, (int)cropRect.y, (int)cropRect.width, (int)cropRect.height, 0);
 		newTexture.SetPixels(pixels);
 
-		//TextureScale.Bilinear(newTexture, 256, 256);
-		//Debug.Log("Supported Texture Formats:");
-		//if (SystemInfo.SupportsTextureFormat(TextureFormat.RGBA32)) Debug.Log(" RGBA32");
-		
 		newTexture.Apply();
 		newTexture.wrapMode = TextureWrapMode.Clamp;
 		return newTexture;
@@ -300,7 +301,7 @@ public class aAV_StreamingSkybox : MonoBehaviour {
 
 	public JSONObject GetJsonTime()
 	{
-		if (!jsonTime) StartCoroutine(ParseDataFile());
+		if (!jsonTime) ParseDataFile();
 		return jsonTime;
 	}
 
@@ -315,95 +316,32 @@ public class aAV_StreamingSkybox : MonoBehaviour {
 	}
 
 	//unity.txtの読み込み
-	private IEnumerator ParseDataFile()
+	private void ParseDataFile()
 	{
-		// Construct a JSONObject from the output.txt file.
-		Dictionary<string, string> fileInfo = new Dictionary<string, string>(); // info from output.txt comes here in key/value pairs.
+		Dictionary<string, string> fileInfo = new Dictionary<string, string>();
 		fileInfo.Clear();
 
-		//string filePath = System.IO.Path.Combine(SkydataPath, "unityData.txt");
-		string filePath = System.IO.Path.Combine(imgDir, dataFile); // 岩城修正 2021-03-19
-
-//		Debug.Log("Trying to get " + filePath);
-
-		if (filePath.Contains("://") )
+		string filePath = System.IO.Path.Combine(SkydataPath, dataFile);
+		//Debug.Log("Reading data from local file " + filePath);
+		try
 		{
-			// Mostly WebGL path...
-			Debug.Log("Reading data via WebRequest: " + filePath);
-			UnityWebRequest www = UnityWebRequest.Get(filePath);
-			yield return www.SendWebRequest();
-
-			string text;
-			Debug.Log("Asked for text file at URL:" + www.url);
-			if (www.isNetworkError || www.isHttpError)
+			using (StreamReader sr = new StreamReader(filePath))
 			{
-				Debug.LogWarning(message: "CANNOT RETRIEVE TEXT!" + www.error);
-			}
-			else
-			{
-				// Show results as text
-				Debug.Log(www.downloadHandler.text);
-
-				// Or retrieve results as binary data
-				//byte[] results = www.downloadHandler.data;
-			}
-			text = www.downloadHandler.text;
-			// TODO: Parse into fileInfo dictionary
-			try
-			{
-				// Create an instance of StringReader to read from the returned text.
-				// The using statement also closes the StringReader.
-				using (StringReader sr = new StringReader(text))
+				String line;
+				while ((line = sr.ReadLine()) != null)
 				{
-					String line;
-					// Read and display lines from the file until end of string.
-					while ((line = sr.ReadLine()) != null)
-					{
-						//Debug.Log(line);
-						String[] keyValPair = line.Split(new Char[] { ':' }, 2);
-						//Debug.Log(keyValPair);
-						if (keyValPair.Length == 2)
-							fileInfo.Add(keyValPair[0], keyValPair[1]);
-					}
+					//Debug.Log(line);
+					String[] keyValPair = line.Split(new Char[] { ':' }, 2);
+					//Debug.Log(keyValPair);
+					if (keyValPair.Length == 2)
+						fileInfo.Add(keyValPair[0], keyValPair[1]);
 				}
 			}
-			catch (Exception e)
-			{
-				// Let the user know what went wrong.
-				Debug.LogWarning("The www.text string could not be parsed:" + e.Message);
-			}
-			// At this point all data from the URL path have been read.
 		}
-		else
+		catch (Exception e)
 		{
-			// LOCAL FILE
-			//Debug.Log("Reading data from local file " + filePath);
-			try
-			{
-				// Create an instance of StreamReader to read from a file.
-				// The using statement also closes the StreamReader.
-				using (StreamReader sr = new StreamReader(filePath))
-				{
-					String line;
-					// Read and display lines from the file until the end of 
-					// the file is reached.
-					while ((line = sr.ReadLine()) != null)
-					{
-						//Debug.Log(line);
-						String[] keyValPair = line.Split(new Char[] { ':' }, 2);
-						//Debug.Log(keyValPair);
-						if (keyValPair.Length == 2)
-							fileInfo.Add(keyValPair[0], keyValPair[1]);
-					}
-				}
-			}
-			catch (Exception e)
-			{
-				// Let the user know what went wrong.
-				Debug.LogWarning("The file could not be read:" + e.Message);
-			}
-			// At this point all data have been read.
-			// Prepare the light info object. They are currently not used, but maybe later?
+			// Let the user know what went wrong.
+			Debug.LogWarning("The file could not be read:" + e.Message);
 		}
 
 		jsonLightInfo = new JSONObject();
@@ -477,20 +415,38 @@ public class aAV_StreamingSkybox : MonoBehaviour {
 			Debug.LogWarning("info lookup failed:" + e.Message);
 			jsonLightInfo.AddField("name", "none");
 			jsonLightInfo.AddField("ambientInt", 0.05f);
-			//jsonLightInfo.AddField("landscape-brt", "0.05");
 		}
 
 		jsonTime = new JSONObject();
-		//jsonTime.Clear();
-		//Debug.Log(fileInfo["JD"]);
-		jsonTime.AddField("jday",	  float.Parse(fileInfo["JD"])); //current Julian day
-		jsonTime.AddField("deltaT",	"unknown");	  //current deltaT as determined by the current dT algorithm  --> TODO: Make float! Or fix in skybox.ssc
-		jsonTime.AddField("gmtShift",  "unknown");	  //the timezone shift to GMT								 --> TODO: Make float! Or fix in skybox.ssc
-		jsonTime.AddField("timeZone",  "unknown");	  //the timezone name										 --> TODO: Fix in skybox.ssc and retrieve as string
-		jsonTime.AddField("utc",	   fileInfo["Date (UTC)"]); //the time in UTC time zone as ISO8601 time string
-		jsonTime.AddField("local",	 fileInfo["Date"]); //the time in local time zone as ISO8601 time string
-		jsonTime.AddField("isTimeNow", false);		//if true, the Stellarium time equals the current real-world time
-		jsonTime.AddField("timerate",  0.0f);		  //the current time rate (in secs). Obviously 0 for a static skybox...
+		JD=double.Parse(fileInfo["JD"]);
+		jsonTime.AddField("jday",	  float.Parse(fileInfo["JD"]));
+		jsonTime.AddField("deltaT",	"unknown");	
+		jsonTime.AddField("gmtShift",  "unknown");
+		jsonTime.AddField("timeZone",  "unknown");
+		jsonTime.AddField("utc",	   fileInfo["Date (UTC)"]);
+		jsonTime.AddField("local",	 fileInfo["Date"]);
+		jsonTime.AddField("isTimeNow", false);
+		jsonTime.AddField("timerate",  0.0f);
 	}
 		
+	private void FileCopy(){
+		CreateDirAndCopyFile( pathBase+dataFile, SkydataPath+"/"+dataFile);
+		CreateDirAndCopyFile( pathBase+"Unity1-north.png", SkydataPath+"/Unity1-north.png");
+		CreateDirAndCopyFile( pathBase+"Unity2-east.png", SkydataPath+"/Unity2-east.png");
+		CreateDirAndCopyFile( pathBase+"Unity3-south.png", SkydataPath+"/Unity3-south.png");
+		CreateDirAndCopyFile( pathBase+"Unity4-west.png", SkydataPath+"/Unity4-west.png");
+		CreateDirAndCopyFile( pathBase+"Unity5-top.png", SkydataPath+"/Unity5-top.png");
+		CreateDirAndCopyFile( pathBase+"Unity6-bottom.png", SkydataPath+"/Unity6-bottom.png");
+	}
+
+	private void CreateDirAndCopyFile(string sourceFullPath, string distFullPath){
+		if(File.Exists(sourceFullPath)){
+			string distDir = Path.GetDirectoryName(distFullPath);
+			if(!Directory.Exists(distDir)){
+				Directory.CreateDirectory(distDir);
+			}
+			File.Copy(sourceFullPath, distFullPath, true);
+		}
+	}
+
 }

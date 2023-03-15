@@ -83,13 +83,24 @@ public class aAV_FlyBehaviour : aAV_GenericBehaviour
 		// Add a force player's rigidbody according to the fly direction.
 		Vector3 direction = Rotating(horizontal, vertical);
 
+		//飛行高度に応じた飛行速度補正
+		var rigid = behaviourManager.GetRigidBody;
+		Ray ray = new Ray(rigid.position, Vector3.down);
+		RaycastHit hit;
+		float aglSpeed; 
+		if ( Physics.Raycast(ray, out hit) ) {
+			aglSpeed = hit.distance/20 +1;
+		} else {
+			aglSpeed = 1;
+		}
+		
 		//InputSytem&GamePad対応、岩城追加
 		//飛行時上昇処理
 		if (aAV_Event.rise){
 			direction += new Vector3(0, 0.1f, 0);
 		}
 		//飛行時スプリント処理
-		behaviourManager.GetRigidBody.AddForce((direction * flySpeed *100 * (aAV_Event.sprint ? sprintFactor : 1)), ForceMode.Acceleration);
+		behaviourManager.GetRigidBody.AddForce((direction * flySpeed * aglSpeed * 100 * (aAV_Event.sprint ? sprintFactor : 1)), ForceMode.Acceleration);
 	}
 
 	// Rotate the player to match correct orientation, according to camera and key pressed.

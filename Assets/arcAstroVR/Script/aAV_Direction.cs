@@ -266,15 +266,15 @@ public class aAV_Direction : MonoBehaviour
 			altitude = humanPosition.y + (float)down[0];
 			if(aAV_Public.center.type=="WG"){
 				XY = gis.EN2LonLat(humanPosition.x, humanPosition.z, aAV_Public.center.WGS_E, aAV_Public.center.WGS_N, 1d);
-				positionText.text = aAV_Public.lang.coordinate+" (WGS84) : "+aAV_Public.lang.lon+"="+XY[0].ToString("F6")+"°, "+aAV_Public.lang.lat+"="+XY[1].ToString("F6")+"°, "+aAV_Public.lang.height+"="+altitude+"m";
+				positionText.text = aAV_Public.lang.coordinate+" (WGS84) : "+aAV_Public.lang.lon+"="+XY[0].ToString("F6")+"°, "+aAV_Public.lang.lat+"="+XY[1].ToString("F6")+"°, "+aAV_Public.lang.height+"="+altitude.ToString("F2")+"m";
 			}else if (aAV_Public.center.type=="JP"){
 				XY[0] = humanPosition.x+aAV_Public.center.JPRCS_E;
 				XY[1] = humanPosition.z+aAV_Public.center.JPRCS_N;
-				positionText.text = aAV_Public.lang.coordinate+" (JPRCS "+aAV_Public.center.JPRCS_zone.ToString() +") : Y="+XY[0].ToString("F2")+"m, X="+XY[1].ToString("F2")+"m, "+aAV_Public.lang.height+"="+altitude+"m";
+				positionText.text = aAV_Public.lang.coordinate+" (JPRCS "+aAV_Public.center.JPRCS_zone.ToString() +") : Y="+XY[0].ToString("F2")+"m, X="+XY[1].ToString("F2")+"m, "+aAV_Public.lang.height+"="+altitude.ToString("F2")+"m";
 			}else if (aAV_Public.center.type=="UT"){
 				XY[0] = humanPosition.x+aAV_Public.center.UTM_E;
 				XY[1] = humanPosition.z+aAV_Public.center.UTM_N;
-				positionText.text = aAV_Public.lang.coordinate+" (UTM "+aAV_Public.center.UTM_zone.ToString() +") : E="+XY[0].ToString("F2")+"m, N="+XY[1].ToString("F2")+"m, "+aAV_Public.lang.height+"="+altitude+"m";
+				positionText.text = aAV_Public.lang.coordinate+" (UTM "+aAV_Public.center.UTM_zone.ToString() +") : E="+XY[0].ToString("F2")+"m, N="+XY[1].ToString("F2")+"m, "+aAV_Public.lang.height+"="+altitude.ToString("F2")+"m";
 			}
 
 			//TopBar：カーソル情報のセット（カメラ位置から計算）

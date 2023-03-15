@@ -3,19 +3,25 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using UnityEngine;
-
+using UnityEngine.UI;
+using CesiumForUnity;
 
 public class aAV_GIS : MonoBehaviour
 {
+	 private GameObject cesiumObj;
+
 	//計算式参照：国土地理院「測量計算サイト」https://vldb.gsi.go.jp/sokuchi/surveycalc/main.html
 	//C#プログラム参照：https://www.kobiwa.jp/2017/03/22/post-286/
-
 	const double daa = 6378137; //長半径
 	const double dF = 298.257222101d; //逆扁平率
 	const double dM0 = 0.9996; //縮尺係数(UTMの場合→0.9996、平面直角座標系(世界測地系)の場合→0.9999)
 	private double[][] jp19list = new double[20][];
 	
-	// Start is called before the first frame update
+	void Awake()
+	{
+		cesiumObj = GameObject.Find("CesiumGeoreference");
+	}
+	
 	void Start()
 	{
 		//平面直角座標19系の原点定義
@@ -341,6 +347,21 @@ public class aAV_GIS : MonoBehaviour
 			aAV_Public.center.JPRCS_N = EN[1];
 		}
 		Debug.Log("WGS84="+aAV_Public.center.WGS_E+","+aAV_Public.center.WGS_N+", UTM"+aAV_Public.center.UTM_zone+"="+aAV_Public.center.UTM_E+","+aAV_Public.center.UTM_N+", JPRCS"+aAV_Public.center.JPRCS_zone+"="+aAV_Public.center.JPRCS_E+","+aAV_Public.center.JPRCS_N);
+		
+		//Cesiumに中心座標をセット
+		if(cesiumObj.activeSelf){
+			CesiumGeoreference cesiumCenter = cesiumObj.GetComponent<CesiumGeoreference>();
+			cesiumCenter.latitude = aAV_Public.center.WGS_N;
+			cesiumCenter.longitude = aAV_Public.center.WGS_E;
+			CanvasScaler cesiumScale = GameObject.Find("CesiumCreditSystemDefault/CesiumCreditSystemUI").GetComponent<CanvasScaler>();
+			cesiumScale.uiScaleMode = CanvasScaler.ScaleMode.ConstantPixelSize;
+			cesiumScale.scaleFactor = 1f;
+		}else{
+			var cesiumCredit = GameObject.Find("CesiumCreditSystemDefault");
+			if(cesiumCredit != null){
+				cesiumCredit.SetActive(false);
+			}
+		}
 	}
 
 }

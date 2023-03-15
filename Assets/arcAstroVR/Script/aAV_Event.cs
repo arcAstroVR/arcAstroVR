@@ -74,6 +74,7 @@ public class aAV_Event : MonoBehaviour
 
 	private float checkTime = 0f;
 	private float pressTime = 0f;
+	private bool moveHold = false;
 	private float angleH = 0;                                          // Float to store camera horizontal angle related to mouse movement.
 	private float angleV = 0;                                          // Float to store camera vertical angle related to mouse movement.
 
@@ -84,6 +85,7 @@ public class aAV_Event : MonoBehaviour
 	private Color infoOffColor = new Color(0f, 0f, 0f, 0.4f);
 	private Color buttonOffColor = new Color(0.4f, 0.4f, 0.4f, 1.0f);
 	private Color buttonOnColor = new Color(0.3f, 0.3f, 0.3f, 1.0f);
+
 
 	void Awake(){
 		Transform mainTrans = GameObject.Find("Main").transform;
@@ -123,16 +125,46 @@ public class aAV_Event : MonoBehaviour
 			if(Gamepad.current != null){
 				pressTime += Time.deltaTime;
 				if(selectDate && checkTime > 0){
-					checkTime -= 0.02f;
-					if(Gamepad.current.dpad.up.isPressed && pressTime > 0.5f){
+					checkTime -= 0.05f;
+					if(Gamepad.current.dpad.up.isPressed && pressTime > 1f){
 						InputFieldUp(dateNo);
-					}else if(Gamepad.current.dpad.down.isPressed && pressTime > 0.5f){
+					}else if(Gamepad.current.dpad.down.isPressed && pressTime > 1f){
 						InputFieldDown(dateNo);
+					}else if(Gamepad.current.dpad.left.isPressed && pressTime > 1f){
+						dateNo -= 1;
+						UnselectInputField();
+						SelectInputField();
+					}else if(Gamepad.current.dpad.right.isPressed && pressTime > 1f){
+						dateNo += 1;
+						UnselectInputField();
+						SelectInputField();
 					}
 					if(Gamepad.current.buttonEast.isPressed){
 						updateButton.GetComponent<Image>().color = buttonOnColor;
 					}else{
 						updateButton.GetComponent<Image>().color = buttonOffColor;
+					}
+				}
+				if(selectStella && checkTime > 0){
+					checkTime -= 0.05f;
+					if(Gamepad.current.dpad.left.isPressed && pressTime > 1f){
+						stellaNo -= 1;
+						stellaSelectPos();
+					}else if(Gamepad.current.dpad.right.isPressed && pressTime > 1f){
+						stellaNo += 1;
+						stellaSelectPos();
+					}
+				}
+				if(selectInfo && checkTime > 0){
+					checkTime -= 0.05f;
+					if(Gamepad.current.dpad.up.isPressed && pressTime > 1f){
+						infoNo -= 1;
+						UnselectInfotarget();
+						selectInfotarget();
+					}else if(Gamepad.current.dpad.down.isPressed && pressTime > 1f){
+						infoNo += 1;
+						UnselectInfotarget();
+						selectInfotarget();
 					}
 				}
 			}
@@ -210,6 +242,8 @@ public class aAV_Event : MonoBehaviour
 			selectStella = true;
 			selectInfo = false;
 			selectDate = false;
+			moveH=0;
+			moveV=0;
 		}else if(selectStella || selectInfo || selectDate){		//全Off
 			GetComponent<AudioSource>().PlayOneShot (audioClose);
 			if(markerCam.activeSelf){
@@ -239,8 +273,9 @@ public class aAV_Event : MonoBehaviour
 			selectStella = false;
 			selectInfo = false;
 			selectDate = true;
-			SelectInputField(dateNo);
-			Debug.Log("Date On");
+			moveH=0;
+			moveV=0;
+			SelectInputField();
 		}else if(selectStella){		//Stella実行
 			GetComponent<AudioSource>().PlayOneShot (audioButton);
 			switch(stellaNo){
@@ -303,25 +338,22 @@ public class aAV_Event : MonoBehaviour
 		}
 	}
 
-	public void OnMove(InputAction.CallbackContext context) {
+	public void OnMove(InputAction.CallbackContext context) {	//選択操作：GamePAD "←→↑↓"
 		if (context.started) return; //最初の押し下げは無視
 		if(!selectStella && !selectDate && !selectInfo  && !textInput){	//通常操作
 			moveH=context.ReadValue<Vector2>().x;
 			moveV=context.ReadValue<Vector2>().y;
 		}else if(selectStella){	//Stellaメニュー操作
-			if(Gamepad.current.dpad.right.wasPressedThisFrame){
+			pressTime = 0f;
+			checkTime = 0f;
+			if(Gamepad.current.dpad.right.wasPressedThisFrame){	//通常時Stellaメニュー選択：GamePAD "→"
 				GetComponent<AudioSource>().PlayOneShot (audioSelect);
 				stellaNo += 1;
-				if(stellaNo > 8){
-					stellaNo = 8;
-				}
-			}else if(Gamepad.current.dpad.left.wasPressedThisFrame){
+			}else if(Gamepad.current.dpad.left.wasPressedThisFrame){	//通常時Stellaメニュー選択：GamePAD "←"
 				GetComponent<AudioSource>().PlayOneShot (audioSelect);
 				stellaNo -= 1;
-				if(stellaNo < 0){
-					stellaNo = 0;
-				}
 			}else if((Gamepad.current.dpad.up.wasPressedThisFrame)&&(aAV_Public.displayMode == 2)){
+				//DomeMasterStellaメニュー選択：GamePAD "↑"
 				GetComponent<AudioSource>().PlayOneShot (audioSelect);
 				switch(stellaNo){
 					case 2:
@@ -343,6 +375,7 @@ public class aAV_Event : MonoBehaviour
 						break;
 				}
 			}else if((Gamepad.current.dpad.down.wasPressedThisFrame)&&(aAV_Public.displayMode == 2)){
+				//DomeMasterStellaメニュー選択：GamePAD "↓"
 				GetComponent<AudioSource>().PlayOneShot (audioSelect);
 				switch(stellaNo){
 					case 0:
@@ -365,42 +398,31 @@ public class aAV_Event : MonoBehaviour
 				}
 			}
 			stellaSelectPos();
-		}else if(selectDate){	//日付操作
-			UnselectInputField();
+		}else if(selectDate){	//日付操作：GamePAD "←→↑↓"
+			pressTime = 0f;
+			checkTime = 0f;
 			if(Gamepad.current.dpad.right.wasPressedThisFrame){
 				GetComponent<AudioSource>().PlayOneShot (audioSelect);
 				dateNo += 1;
-				if(dateNo > 6){
-					dateNo = 6;
-				}
+				UnselectInputField();
+				SelectInputField();
 			}else if(Gamepad.current.dpad.left.wasPressedThisFrame){
 				GetComponent<AudioSource>().PlayOneShot (audioSelect);
 				dateNo -= 1;
-				if(dateNo < 1){
-					dateNo = 1;
-				}
+				UnselectInputField();
+				SelectInputField();
 			}else if(Gamepad.current.dpad.up.wasPressedThisFrame){
-				pressTime = 0f;
-				checkTime = 0f;
 				InputFieldUp(dateNo);
 			}else if(Gamepad.current.dpad.down.wasPressedThisFrame){
-				pressTime = 0f;
-				checkTime = 0f;
 				InputFieldDown(dateNo);
 			}
-			SelectInputField(dateNo);
-		}else if(selectInfo){	//InfoView操作
-			UnselectInfotarget();
+		}else if(selectInfo){	//InfoView操作：GamePAD "←→↑↓"
+			pressTime = 0f;
+			checkTime = 0f;
 			if(Gamepad.current.dpad.up.wasPressedThisFrame){
 				infoNo -=1;
 			}else if(Gamepad.current.dpad.down.wasPressedThisFrame){
 				infoNo +=1;
-			}
-			if(infoNo < 1){
-				infoNo = 1;
-			}
-			if(infoNo > aAV_Public.rplist.Count+aAV_Public.linelist.Count+aAV_Public.datalist.Count){
-				infoNo = aAV_Public.rplist.Count+aAV_Public.linelist.Count+aAV_Public.datalist.Count;
 			}
 			if(Gamepad.current.dpad.left.wasPressedThisFrame){
 				infoAction -=1;
@@ -410,6 +432,7 @@ public class aAV_Event : MonoBehaviour
 			if(infoAction < 1){
 				infoAction = 1;
 			}
+			UnselectInfotarget();
 			selectInfotarget();
 		}
 	}
@@ -480,6 +503,8 @@ public class aAV_Event : MonoBehaviour
 				selectStella = false;
 				selectInfo = true;
 				selectDate = false;
+				moveH=0;
+				moveV=0;
 				GetComponent<AudioSource>().PlayOneShot (audioOpen);
 				selectInfotarget();
 			}
@@ -559,7 +584,13 @@ public class aAV_Event : MonoBehaviour
 	}
 
 	public void selectInfotarget(){
-		if(infoNo != 0){
+		if(infoNo < 1){
+			infoNo = 1;
+		}else if(aAV_Public.rplist.Count+aAV_Public.linelist.Count+aAV_Public.datalist.Count < infoNo) {
+			infoNo = aAV_Public.rplist.Count+aAV_Public.linelist.Count+aAV_Public.datalist.Count;
+		}
+		if(selectInfo && aAV_Public.rplist.Count+aAV_Public.linelist.Count+aAV_Public.datalist.Count > 0){
+			var bottomPos = 0;
 			if(infoNo <= aAV_Public.rplist.Count){
 				targetGameobject = infoGameobject.transform.Find("ScrollView/Viewport/Log/rpInfo").GetChild(infoNo).gameObject;
 				if(infoAction == 1){
@@ -570,6 +601,7 @@ public class aAV_Event : MonoBehaviour
 					targetGameobject.transform.Find("CamButton").gameObject.GetComponent<Image>().color = inputColor;
 					infoAction = 3;
 				}
+				bottomPos += 22 + infoNo*12;
 			}else if(infoNo <= aAV_Public.rplist.Count+aAV_Public.linelist.Count){
 				targetGameobject = infoGameobject.transform.Find("ScrollView/Viewport/Log/lnInfo").GetChild(infoNo - aAV_Public.rplist.Count).gameObject;
 				if(infoAction == 1){
@@ -578,12 +610,23 @@ public class aAV_Event : MonoBehaviour
 					targetGameobject.transform.Find("MapButton").gameObject.GetComponent<Image>().color = inputColor;
 					infoAction = 2;
 				}
+				bottomPos += 22*2 + infoNo*12;
 			}else{
 				targetGameobject = infoGameobject.transform.Find("ScrollView/Viewport/Log/obInfo").GetChild(infoNo - aAV_Public.rplist.Count - aAV_Public.linelist.Count).gameObject;
 				targetGameobject.transform.Find("view/Background").gameObject.GetComponent<Image>().color = inputColor;
 				infoAction = 1;
+				bottomPos += 22*3 + infoNo*12;
 			}
 			targetGameobject.GetComponent<Image>().color = OnColor ;
+			var viewH=infoGameobject.transform.Find("ScrollView").GetComponent<RectTransform>().sizeDelta.y;
+			var logY=infoGameobject.transform.Find("ScrollView/Viewport/Log").GetComponent<RectTransform>().anchoredPosition.y;
+			
+			//選択項目がInfoView内に収まるようにスクロール
+			if(logY+viewH < bottomPos){
+				infoGameobject.transform.Find("ScrollView/Viewport/Log").GetComponent<RectTransform>().anchoredPosition = new Vector3(0, bottomPos-viewH+10, 0);
+			}else if(logY > bottomPos -24){
+				infoGameobject.transform.Find("ScrollView/Viewport/Log").GetComponent<RectTransform>().anchoredPosition = new Vector3(0, bottomPos-34, 0);
+			}
 		}else{
 			selectInfo = false;
 		}
@@ -600,8 +643,14 @@ public class aAV_Event : MonoBehaviour
 		secondInputField.GetComponent<Image>().color = Color.white;
 	}
 
-	private void SelectInputField(int number){
-		switch(number){
+	private void SelectInputField(){
+		if(dateNo < 1){
+			dateNo = 1;
+		}else  if(dateNo > 6){
+			dateNo = 6;
+		}
+
+		switch(dateNo){
 			case 0:
 				tzInputField.GetComponent<Image>().color = inputColor;
 				break;
@@ -692,6 +741,12 @@ public class aAV_Event : MonoBehaviour
 	}
 
 	public void stellaSelectPos(){
+		if(stellaNo < 0){
+			stellaNo = 0;
+		}else  if(stellaNo > 8){
+			stellaNo = 8;
+		}
+		
 		var pos = selectGameobject.transform.localPosition;
 		if(aAV_Public.displayMode == 2){
 			if(stellaNo < 2){

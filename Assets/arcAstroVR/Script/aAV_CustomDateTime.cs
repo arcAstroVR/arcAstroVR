@@ -49,7 +49,6 @@ public class aAV_CustomDateTime : MonoBehaviour
             Debug.LogError("The dates 5 through 14 October, 1582, do not exist in the Gregorian system!");
         }
 
-        //	if( y < 0 )  ++y;
         if(customDateTime.era == Era.BC) customDateTime.year = -customDateTime.year + 1;
         if(customDateTime.month > 2) {
             jy = customDateTime.year;
@@ -88,9 +87,6 @@ public class aAV_CustomDateTime : MonoBehaviour
     public aAV_CustomDateTime FromJulianDay(double jday) {
         int j1, j2, j3, j4, j5;         //scratch
 
-        //
-        // get the date from the Julian day number
-        //
         int intgr = (int)Math.Floor(jday);
         double frac = jday - intgr;
         int gregjd = 2299161;
@@ -100,7 +96,6 @@ public class aAV_CustomDateTime : MonoBehaviour
         } else
             j1 = intgr;
 
-        //correction for half day offset
         double dayfrac = frac + 0.5;
         if(dayfrac >= 1.0) {
             dayfrac -= 1.0;
@@ -119,9 +114,6 @@ public class aAV_CustomDateTime : MonoBehaviour
         if(m > 2) { --y; }
         if(y <= 0) { --y; }
 
-        //
-        // get time of day from day fraction
-        //
         int hr = (int)Math.Floor(dayfrac * 24.0);
         int mn = (int)Math.Floor((dayfrac * 24.0 - hr) * 60.0);
         double f = ((dayfrac * 24.0 - hr) * 60.0 - mn) * 60.0;

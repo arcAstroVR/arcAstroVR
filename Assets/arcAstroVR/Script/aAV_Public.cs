@@ -11,7 +11,15 @@ public class aAV_Public : MonoBehaviour
 	public GameObject markerPrefab;
 	public GameObject linePrefab;
 	public GameObject labelPrefab;
-	public GameObject waterPrefab;
+	public GameObject water1Prefab;
+	public GameObject water2Prefab;
+	public GameObject fire1Prefab;
+	public GameObject fire2Prefab;
+	public GameObject fire3Prefab;
+	public GameObject fire4Prefab;
+	public GameObject fire5Prefab;
+	public GameObject mirror1Prefab;
+	public GameObject mirror2Prefab;
 
 	public class BasicInfo
 	{
@@ -88,6 +96,7 @@ public class aAV_Public : MonoBehaviour
 	{
 		public string name = "";
 		public string file = "";
+		public string type = "";
 		public double origin_E = 0d;			//Unity空間座標
 		public double origin_N = 0d;		//Unity空間座標
 		public float origin_H = 0f;				//Unity空間座標
@@ -140,7 +149,6 @@ public class aAV_Public : MonoBehaviour
 	public static bool addLine = false;
 	public static bool showCompass = false;
 	public static bool uiDrag = false;
-	public static int ambient = 0;
 	public static int displayMode = 0;
 	public static bool domeFix = false;
 	public static string copyright = "";
